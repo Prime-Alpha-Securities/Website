@@ -1,0 +1,28 @@
+# Node modules
+node_modules/
+
+# Build directories
+build/
+dist/
+
+# Environment variables file
+.env
+
+# Logs
+*.log
+
+# Ignore specific file types
+*.tmp
+*.swp
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Terraform
+terraform/.terraform/
+terraform/modules/.terraform/
+terraform/.terraform.lock.hcl
+
+# Ignore Terraform provider binaries (adjust paths as needed)
+terraform/.terraform/providers/

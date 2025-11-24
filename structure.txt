@@ -1,0 +1,28 @@
+my-react-app/
+├── public/
+│   ├── images/
+│   │   ├── js/
+│   │   │   └── node-logo.png
+│   │   ├── aws/
+│   │   │   └── aws-logo.png
+│   │   ├── cloud/
+│   │   │   └── devops-logo.png
+│   │   ├── python/
+│   │   │   └── python-logo.jpeg
+│   │   └── c++/
+│   │       └── c++-logo.jpg
+│   ├── index.html
+│   └── ...
+├── src/
+│   ├── components/
+│   │   ├── App.js
+│   │   ├── Navbar.js
+│   │   └── Cards.js
+│   ├── index.js
+│   └── ...
+├── node_modules/
+├── package.json
+└── ...
+
+
+ 
