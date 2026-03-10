@@ -80,7 +80,7 @@ ok "Frontend built → $APP_DIR/dist/ ($(du -sh dist | cut -f1))"
 # ── STEP 3: Server-side AWS SDK ───────────────────────────────────────────────
 step "Installing server-side AWS SDK"
 # Install into the same node_modules — server.js uses require()
-npm install @aws-sdk/client-dynamodb @aws-sdk/util-dynamodb @aws-sdk/client-sesv2 @aws-sdk/client-sns 2>&1 | tee -a "$LOG" | tail -2
+npm install @aws-sdk/client-dynamodb @aws-sdk/util-dynamodb @aws-sdk/client-sesv2 2>&1 | tee -a "$LOG" | tail -2
 ok "AWS SDK installed (server-side only)"
 
 # Convert package type to commonjs for server.js (it uses require())

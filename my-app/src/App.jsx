@@ -1884,7 +1884,7 @@ function WCal({events,addEvent,removeEvent,workers}){
     if(!form.date||!form.title){alert("Date and title required.");return;}
     const ev={...form,eventId:`ev_${uid()}`};
     await addEvent(ev);
-    // Notify each assigned worker by email + SMS
+    // Notify each assigned worker by email
     const assignedWorkers=workers.filter(w=>form.members.includes(w.workerId));
     if(assignedWorkers.length){await notify.calendar({event:ev,workers:assignedWorkers});}
     sa(false);sf({date:"",title:"",members:[]});
@@ -2038,7 +2038,7 @@ function WWorkers({workers,addWorker,updateWorker,removeWorker,showToast}){
             </div>
             <div style={{display:"grid",gap:6,marginBottom:16}}>
               <KV k="Email" v={w.email||"—"}/>
-              <KV k="Phone" v={w.phone||"—  (no SMS)"}/>
+              <KV k="Phone" v={w.phone||"—"}/>
             </div>
             <div style={{display:"flex",gap:8}}>
               <button style={{...T.btnSm,flex:1}} onClick={()=>openEdit(w)}>Edit</button>
@@ -2051,7 +2051,7 @@ function WWorkers({workers,addWorker,updateWorker,removeWorker,showToast}){
       <div style={{...T.card,marginTop:32,borderLeft:"3px solid var(--blue)"}}>
         <h3 style={{...T.hdg,fontSize:15,marginBottom:12}}>Notification Reference</h3>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-          {[["📧 Calendar Email","Worker receives an email when assigned to a calendar event."],["📱 Calendar SMS","Worker receives an SMS if they have a phone number on file."],["📧 Compose (Email tab)","Real email sent via SES, not just a DB log."],["⚠ Phone Format","Use E.164 format for SMS: +12125550101"]].map(([t,d])=>(
+          {[["📧 Calendar Email","Worker receives an email when assigned to a calendar event."],["📧 Compose (Email tab)","Real email sent via SES, not just a DynamoDB log."],["📧 Contact Form","Enquiries trigger an email alert to your ops inbox."],["📧 Credit Form","New credit applications trigger an alert to your ops inbox."]].map(([t,d])=>(
             <div key={t} style={{background:"var(--ow)",borderRadius:6,padding:"12px 14px"}}>
               <div style={{fontWeight:700,fontSize:13,marginBottom:4}}>{t}</div>
               <div style={{fontSize:12,color:"var(--dim)",lineHeight:1.6}}>{d}</div>
@@ -2064,7 +2064,7 @@ function WWorkers({workers,addWorker,updateWorker,removeWorker,showToast}){
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:0}}>
           <Inp label="Full Name *" value={form.name} onChange={e=>sf(p=>({...p,name:e.target.value}))}/>
           <div style={{paddingLeft:16}}><Inp label="Email Address *" type="email" value={form.email} onChange={e=>sf(p=>({...p,email:e.target.value}))}/></div>
-          <Inp label="Phone (E.164 for SMS)" value={form.phone} onChange={e=>sf(p=>({...p,phone:e.target.value}))} placeholder="+12125550101"/>
+          <Inp label="Phone" value={form.phone} onChange={e=>sf(p=>({...p,phone:e.target.value}))} placeholder="+12125550101"/>
           <div style={{paddingLeft:16}}>
             <label style={T.lbl}>Role</label>
             <select style={T.inp} value={form.role} onChange={e=>sf(p=>({...p,role:e.target.value}))}>

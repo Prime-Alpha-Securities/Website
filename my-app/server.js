@@ -3,14 +3,13 @@
 //  Prime Alpha Securities — Backend Server
 //
 //  Ports:  80 (HTTP)  443 (HTTPS)
-//  Routes: /api/notify/*  → SES email + SNS SMS notifications
+//  Routes: /api/notify/*  → SES email notifications
 //          /api/*         → DynamoDB CRUD (IAM role, server-side)
 //          /*             → Vite dist/ (React SPA)
 //
 //  AWS services used (all via IAM role — no hardcoded keys):
 //    DynamoDB  — data storage
 //    SES       — transactional email
-//    SNS       — SMS to worker phones
 //
 //  REQUIRED ENV VARS (set in systemd service or export before running):
 //    SES_FROM_EMAIL   — verified SES sender e.g. noreply@primealphasecurities.com
@@ -30,7 +29,6 @@ const {
 } = require('@aws-sdk/client-dynamodb');
 const { marshall, unmarshall } = require('@aws-sdk/util-dynamodb');
 const { SESv2Client, SendEmailCommand }  = require('@aws-sdk/client-sesv2');
-const { SNSClient, PublishCommand }       = require('@aws-sdk/client-sns');
 
 // ── Config ────────────────────────────────────────────────────────────────────
 const PORT_HTTP    = Number(process.env.PORT_HTTP)  || 80;
@@ -44,7 +42,6 @@ const CERTS        = path.join(__dirname, 'certs');
 // ── AWS clients — all use EC2 IAM role automatically ─────────────────────────
 const ddb = new DynamoDBClient({ region: REGION });
 const ses = new SESv2Client({ region: REGION });
-const sns = new SNSClient({ region: REGION });
 
 // ── Primary key map ───────────────────────────────────────────────────────────
 const PK = {
@@ -118,25 +115,6 @@ async function sendEmail({ to, subject, html, text }) {
   }
 }
 
-// ── SNS: send SMS to a phone number ──────────────────────────────────────────
-async function sendSMS(phoneNumber, message) {
-  if (!phoneNumber) return;
-  // E.164 format required: +12125550101
-  const phone = phoneNumber.startsWith('+') ? phoneNumber : '+' + phoneNumber.replace(/\D/g, '');
-  try {
-    await sns.send(new PublishCommand({
-      PhoneNumber: phone,
-      Message: message,
-      MessageAttributes: {
-        'AWS.SNS.SMS.SMSType': { DataType: 'String', StringValue: 'Transactional' },
-        'AWS.SNS.SMS.SenderID': { DataType: 'String', StringValue: 'PrimeAlpha' },
-      },
-    }));
-    console.log(`[SNS] SMS sent → ${phone}`);
-  } catch (e) {
-    console.error(`[SNS] Failed (${phone}):`, e.message);
-  }
-}
 
 // ── Email templates ───────────────────────────────────────────────────────────
 function wrapHtml(title, bodyHtml) {
@@ -211,7 +189,7 @@ async function notifyCredit(data) {
   await sendEmail({ to: NOTIFY_EMAIL, subject: `[PAS Credit] New application — ${data.name} — $${data.amount}`, html, text });
 }
 
-// POST /api/notify/calendar  — new event, email+SMS each assigned worker
+// POST /api/notify/calendar  — new event, email each assigned worker
 async function notifyCalendar(data) {
   // data: { event: {...}, workers: [{name,email,phone,...}] }
   const { event, workers = [] } = data;
@@ -240,10 +218,6 @@ async function notifyCalendar(data) {
       await sendEmail({ to: w.email, subject: `[PAS Calendar] You've been assigned: ${event.title} — ${dateStr}`, html, text });
     }
 
-    // ── SMS ────────────────────────────────────────────────────────────────
-    if (w.phone) {
-      await sendSMS(w.phone, `Prime Alpha: You've been scheduled for "${event.title}" on ${dateStr}. Check your email for details.`);
-    }
   }));
 }
 
