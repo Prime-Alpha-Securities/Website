@@ -174,8 +174,7 @@ resource "aws_lb_listener" "https" {
   load_balancer_arn = aws_lb.main.arn
   port              = 443
   protocol          = "HTTPS"
-
-  depends_on = [aws_lb_target_group.app]
+  certificate_arn = "arn:aws:acm:eu-west-2:746669235580:certificate/98e9dbd1-8f96-4681-a501-4bf00e923cab"
 
   default_action {
     type             = "forward"
@@ -191,7 +190,12 @@ resource "aws_lb_listener" "http" {
   depends_on = [aws_lb_target_group.app]
 
   default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.app.arn
+    type = "redirect"
+
+    redirect {
+      port        = "443"
+      protocol    = "HTTPS"
+      status_code = "HTTP_301"
+    }
   }
 }

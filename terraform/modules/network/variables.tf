@@ -34,3 +34,8 @@ variable "target" {
 type = string
 
 }
+
+variable "acm_certificate_arn" {
+  description = "ACM certificate for HTTPS"
+  type        = string
+}

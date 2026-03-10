@@ -106,6 +106,14 @@ const api = {
     } catch(e) { console.warn(`[API] del ${table}/${id}:`, e.message); return true; }
   },
 };
+// ── Notification helpers — POST /api/notify/* ─────────────────────────────────
+const notify = {
+  async enquiry(data)    { try { await fetch('/api/notify/enquiry',     {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}); } catch(e){console.warn('[notify]',e.message);} },
+  async credit(data)     { try { await fetch('/api/notify/credit',      {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}); } catch(e){console.warn('[notify]',e.message);} },
+  async calendar(data)   { try { await fetch('/api/notify/calendar',    {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}); } catch(e){console.warn('[notify]',e.message);} },
+  async workerEmail(data){ try { await fetch('/api/notify/worker-email',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}); } catch(e){console.warn('[notify]',e.message);} },
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 //  SEED DATA  — used when AWS endpoint not yet configured
 // ─────────────────────────────────────────────────────────────────────────────
@@ -753,7 +761,10 @@ function PrivateCreditPublic(){
   const submit=async()=>{
     if(!form.name||!form.email||!form.amount){alert("Please complete required fields.");return;}
     sv(true);
-    await api.put("credit_application",{appId:`app_${uid()}`,...form,submittedAt:now(),status:"pending"});
+    const appId=`app_${uid()}`;
+    const record={appId,...form,submittedAt:now(),status:"pending"};
+    await api.put("credit_application",record);
+    await notify.credit(record);
     sv(false);ss(true);
   };
   return(
@@ -888,7 +899,15 @@ function Research(){
 function Contact(){
   const [form,sf]=useState({name:"",email:"",org:"",subject:"",message:""});
   const [sent,ss]=useState(false);
+  const [saving,sv]=useState(false);
   const set=k=>e=>sf(p=>({...p,[k]:e.target.value}));
+  const submit=async()=>{
+    if(!form.name||!form.email||!form.message){alert("Fill required fields.");return;}
+    sv(true);
+    await api.put("enquiries",{enquiryId:`enq_${uid()}`,type:"contact",...form,submittedAt:now()});
+    await notify.enquiry(form);
+    sv(false);ss(true);
+  };
   return(
     <div style={{paddingTop:66}}>
       <div style={{background:"var(--head)",padding:"80px 40px"}}>
@@ -923,7 +942,7 @@ function Contact(){
               <Inp label="Organisation" value={form.org} onChange={set("org")}/>
               <Sel label="Subject" value={form.subject} onChange={set("subject")} options={[{value:"",label:"Select…"},{value:"IR",label:"Investor Relations"},{value:"media",label:"Media"},{value:"credit",label:"Credit Enquiry"},{value:"careers",label:"Careers"},{value:"other",label:"Other"}]}/>
               <TA label="Message *" value={form.message} onChange={set("message")}/>
-              <button style={T.btnP} onClick={()=>{if(form.name&&form.email&&form.message)ss(true);else alert("Fill required fields.");}}>Send Message</button>
+              <button style={T.btnP} onClick={submit} disabled={saving}>{saving?"Sending…":"Send Message"}</button>
             </>
           )}
         </div>
@@ -1281,6 +1300,7 @@ function WorkerPortal({user,onLogout}){
   const [deals,sd]=useState([]);
   const [events,se]=useState([]);
   const [re,sr]=useState([]);
+  const [workers,sw]=useState([]);
   const [loading,sl]=useState(true);
   const [tab,st]=useState("Clients");
   const [toast,stt]=useState({msg:"",type:"success"});
@@ -1294,8 +1314,11 @@ function WorkerPortal({user,onLogout}){
       api.getAll("pe_companies"),
       api.getAll("calendar"),
       api.getAll("real_estate"),
-    ]).then(([c,p,ev,r])=>{
-      sc(c);sd(p);se(ev);sr(r);sl(false);
+      api.getAll("workers"),
+    ]).then(([c,p,ev,r,w])=>{
+      sc(c);sd(p);se(ev);sr(r);
+      sw(w.length?w:SEED["workers"]);
+      sl(false);
     });
   },[]);
 
@@ -1343,7 +1366,23 @@ function WorkerPortal({user,onLogout}){
     showToast("Event removed.","error");
   },[]);
 
-  const tabs=["Clients","Private Equity","Private Credit","Real Estate","Dashboard","Calendar","Email"];
+  const addWorker=useCallback(async(item)=>{
+    sw(prev=>[...prev,item]);
+    await api.put("workers",item);
+    showToast("Worker added.");
+  },[]);
+  const updateWorker=useCallback(async(id,fields)=>{
+    sw(prev=>prev.map(w=>w.workerId===id?{...w,...fields}:w));
+    await api.patch("workers",id,fields);
+    showToast("Worker saved.");
+  },[]);
+  const removeWorker=useCallback(async(id)=>{
+    sw(prev=>prev.filter(w=>w.workerId!==id));
+    await api.del("workers",id);
+    showToast("Worker removed.","error");
+  },[]);
+
+  const tabs=["Clients","Private Equity","Private Credit","Real Estate","Dashboard","Calendar","Email","Workers"];
 
   if(loading)return<div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center"}}><Spinner text="Connecting to AWS DynamoDB…"/></div>;
 
@@ -1365,12 +1404,13 @@ function WorkerPortal({user,onLogout}){
       </div>
       <div style={{marginLeft:228,flex:1,padding:"32px 40px"}}>
         {tab==="Clients"       &&<WClients clients={clients} addClient={addClient} updateClient={updateClient} removeClient={removeClient} showToast={showToast}/>}
-        {tab==="Private Equity"&&<WPE deals={deals} addDeal={addDeal} updateDeal={updateDeal} removeDeal={removeDeal} workers={SEED["workers"]} showToast={showToast}/>}
+        {tab==="Private Equity"&&<WPE deals={deals} addDeal={addDeal} updateDeal={updateDeal} removeDeal={removeDeal} workers={workers} showToast={showToast}/>}
         {tab==="Private Credit"&&<WCredit showToast={showToast}/>}
         {tab==="Real Estate"   &&<WRE assets={re} setAssets={sr} showToast={showToast}/>}
         {tab==="Dashboard"     &&<WDash clients={clients} deals={deals} re={re}/>}
-        {tab==="Calendar"      &&<WCal events={events} addEvent={addEvent} removeEvent={removeEvent} workers={SEED["workers"]}/>}
-        {tab==="Email"         &&<WEmail clients={clients} showToast={showToast}/>}
+        {tab==="Calendar"      &&<WCal events={events} addEvent={addEvent} removeEvent={removeEvent} workers={workers}/>}
+        {tab==="Email"         &&<WEmail clients={clients} workers={workers} user={user} showToast={showToast}/>}
+        {tab==="Workers"       &&<WWorkers workers={workers} addWorker={addWorker} updateWorker={updateWorker} removeWorker={removeWorker} showToast={showToast}/>}
       </div>
       <Toast msg={toast.msg} type={toast.type} onClose={()=>stt({msg:"",type:"success"})}/>
     </div>
@@ -1842,7 +1882,11 @@ function WCal({events,addEvent,removeEvent,workers}){
   const [form,sf]=useState({date:"",title:"",members:[]});
   const doAdd=async()=>{
     if(!form.date||!form.title){alert("Date and title required.");return;}
-    await addEvent({...form,eventId:`ev_${uid()}`});
+    const ev={...form,eventId:`ev_${uid()}`};
+    await addEvent(ev);
+    // Notify each assigned worker by email + SMS
+    const assignedWorkers=workers.filter(w=>form.members.includes(w.workerId));
+    if(assignedWorkers.length){await notify.calendar({event:ev,workers:assignedWorkers});}
     sa(false);sf({date:"",title:"",members:[]});
   };
   const sorted=[...events].sort((a,b)=>a.date.localeCompare(b.date));
@@ -1898,7 +1942,7 @@ function WCal({events,addEvent,removeEvent,workers}){
 }
 
 // ── WORKER: EMAIL ──────────────────────────────────────────────────────────────
-function WEmail({clients,showToast}){
+function WEmail({clients,workers,user,showToast}){
   const [to,st]=useState("");
   const [custom,sc]=useState("");
   const [subject,ss]=useState("");
@@ -1910,7 +1954,12 @@ function WEmail({clients,showToast}){
   const send=async()=>{
     if(!finalTo||!subject||!body){alert("Fill all fields.");return;}
     ssn(true);
-    await api.put("enquiries",{enquiryId:`em_${uid()}`,to:finalTo,subject,body,sentAt:now(),sentBy:"worker"});
+    const sentBy=typeof user!=="undefined"?user?.name:"worker";
+    // Save log to DynamoDB and send real email via SES
+    await Promise.all([
+      api.put("enquiries",{enquiryId:`em_${uid()}`,to:finalTo,subject,body,sentAt:now(),sentBy}),
+      notify.workerEmail({to:finalTo,subject,body,sentBy}),
+    ]);
     ssn(false);sse(true);showToast(`Email sent to ${finalTo}`);
     setTimeout(()=>{sse(false);st("");sc("");ss("");sb("");},2500);
   };
@@ -1940,6 +1989,107 @@ function WEmail({clients,showToast}){
 // ─────────────────────────────────────────────────────────────────────────────
 //  APP ROOT — URL-aware router
 // ─────────────────────────────────────────────────────────────────────────────
+// ── WORKER: WORKERS MANAGEMENT ────────────────────────────────────────────────
+function WWorkers({workers,addWorker,updateWorker,removeWorker,showToast}){
+  const blank={name:"",email:"",phone:"",role:"",dept:""};
+  const [showAdd,sa]=useState(false);
+  const [editId,sei]=useState(null);
+  const [form,sf]=useState(blank);
+  const [saving,sv]=useState(false);
+
+  const openEdit=(w)=>{sf({name:w.name||"",email:w.email||"",phone:w.phone||"",role:w.role||"",dept:w.dept||""});sei(w.workerId);sa(true);};
+
+  const save=async()=>{
+    if(!form.name||!form.email){showToast("Name and email required.","error");return;}
+    sv(true);
+    if(editId){
+      await updateWorker(editId,form);
+    } else {
+      await addWorker({workerId:`w_${Date.now()}`,joinedAt:new Date().toISOString().slice(0,10),...form});
+    }
+    sv(false);sa(false);sf(blank);sei(null);
+  };
+
+  const ROLES=["Portfolio Manager","Credit Analyst","Associate","Analyst","Vice President","Managing Director","Operations","Compliance","Technology","Other"];
+  const DEPTS=["Investments","Private Credit","Private Equity","Real Estate","Operations","Technology","Compliance","Finance","Other"];
+
+  return(
+    <div className="fu">
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:24}}>
+        <div>
+          <h1 style={{...T.hdg,fontSize:34,marginBottom:4}}>Team Members</h1>
+          <DBBadge table="workers" count={workers.length}/>
+        </div>
+        <button style={T.btnP} onClick={()=>{sf(blank);sei(null);sa(true);}}>+ Add Worker</button>
+      </div>
+
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(340px,1fr))",gap:16}}>
+        {workers.map(w=>(
+          <div key={w.workerId} style={{...T.card}}>
+            <div style={{display:"flex",alignItems:"flex-start",gap:14,marginBottom:16}}>
+              <div style={{width:44,height:44,background:"var(--blue)",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontFamily:"var(--ff-h)",fontSize:18,fontWeight:800,flexShrink:0}}>
+                {(w.name||"?")[0].toUpperCase()}
+              </div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontWeight:700,color:"var(--head)",fontSize:15,marginBottom:2}}>{w.name}</div>
+                <div style={{fontSize:12,color:"var(--blue)",fontWeight:600}}>{w.role||"—"}</div>
+                <div style={{fontSize:11,color:"var(--dim)"}}>{w.dept||""}</div>
+              </div>
+            </div>
+            <div style={{display:"grid",gap:6,marginBottom:16}}>
+              <KV k="Email" v={w.email||"—"}/>
+              <KV k="Phone" v={w.phone||"—  (no SMS)"}/>
+            </div>
+            <div style={{display:"flex",gap:8}}>
+              <button style={{...T.btnSm,flex:1}} onClick={()=>openEdit(w)}>Edit</button>
+              <button style={{...T.btnD,fontSize:12,padding:"6px 14px"}} onClick={()=>{if(window.confirm(`Remove ${w.name}?`))removeWorker(w.workerId);}}>Remove</button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{...T.card,marginTop:32,borderLeft:"3px solid var(--blue)"}}>
+        <h3 style={{...T.hdg,fontSize:15,marginBottom:12}}>Notification Reference</h3>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+          {[["📧 Calendar Email","Worker receives an email when assigned to a calendar event."],["📱 Calendar SMS","Worker receives an SMS if they have a phone number on file."],["📧 Compose (Email tab)","Real email sent via SES, not just a DB log."],["⚠ Phone Format","Use E.164 format for SMS: +12125550101"]].map(([t,d])=>(
+            <div key={t} style={{background:"var(--ow)",borderRadius:6,padding:"12px 14px"}}>
+              <div style={{fontWeight:700,fontSize:13,marginBottom:4}}>{t}</div>
+              <div style={{fontSize:12,color:"var(--dim)",lineHeight:1.6}}>{d}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <Modal open={showAdd} onClose={()=>{sa(false);sei(null);sf(blank);}} title={editId?"Edit Worker":"Add New Worker"} width={520}>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:0}}>
+          <Inp label="Full Name *" value={form.name} onChange={e=>sf(p=>({...p,name:e.target.value}))}/>
+          <div style={{paddingLeft:16}}><Inp label="Email Address *" type="email" value={form.email} onChange={e=>sf(p=>({...p,email:e.target.value}))}/></div>
+          <Inp label="Phone (E.164 for SMS)" value={form.phone} onChange={e=>sf(p=>({...p,phone:e.target.value}))} placeholder="+12125550101"/>
+          <div style={{paddingLeft:16}}>
+            <label style={T.lbl}>Role</label>
+            <select style={T.inp} value={form.role} onChange={e=>sf(p=>({...p,role:e.target.value}))}>
+              <option value="">Select role…</option>
+              {ROLES.map(r=><option key={r} value={r}>{r}</option>)}
+            </select>
+          </div>
+          <div style={{gridColumn:"1/-1"}}>
+            <label style={T.lbl}>Department</label>
+            <select style={T.inp} value={form.dept} onChange={e=>sf(p=>({...p,dept:e.target.value}))}>
+              <option value="">Select department…</option>
+              {DEPTS.map(d=><option key={d} value={d}>{d}</option>)}
+            </select>
+          </div>
+        </div>
+        <div style={{display:"flex",gap:12,marginTop:8}}>
+          <button style={T.btnP} onClick={save} disabled={saving}>{saving?"Saving…":editId?"Save Changes":"Add Worker"}</button>
+          <button style={T.btnG} onClick={()=>{sa(false);sei(null);sf(blank);}}>Cancel</button>
+        </div>
+      </Modal>
+    </div>
+  );
+}
+
+
 export default function App(){
   const [page,sp]=useState("home");
   const [investorUser,siu]=useState(null);
