@@ -151,7 +151,7 @@ Environment=NOTIFY_EMAIL=compliance@primealphasecurities.com
 WantedBy=multi-user.target
 EOF
 
-systemctl daemon-reloadss
+systemctl daemon-reload
 systemctl enable "$SVC" >> "$LOG" 2>&1
 ok "systemd service registered (starts on reboot)"
 
