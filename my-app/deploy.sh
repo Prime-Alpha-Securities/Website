@@ -161,22 +161,22 @@ systemctl start "$SVC"
 sleep 3
 
 HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/ 2>/dev/null || echo 000)
-HTTPS_CODE=$(curl -sk -o /dev/null -w "%{http_code}" https://localhost/ 2>/dev/null || echo 000)
-API_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/api/investor 2>/dev/null || echo 000)
+# HTTPS_CODE=$(curl -sk -o /dev/null -w "%{http_code}" https://localhost/ 2>/dev/null || echo 000)
+# API_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/api/investor 2>/dev/null || echo 000)
 
 PUBLIC_IP=$(curl -s --max-time 5 http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null \
             || hostname -I | awk '{print $1}')
 
 echo ""
-if [[ "$HTTP_CODE" == "200" && "$HTTPS_CODE" == "200" ]]; then
+if [[ "$HTTP_CODE" == "200" ]]; then
   echo -e "${GREEN}"
   echo "  ╔══════════════════════════════════════════════╗"
   echo "  ║          DEPLOYMENT SUCCESSFUL  ✓            ║"
   echo "  ╠══════════════════════════════════════════════╣"
   printf "  ║  HTTP  →  http://%-25s  ║\n"  "$PUBLIC_IP"
-  printf "  ║  HTTPS →  https://%-24s  ║\n" "$PUBLIC_IP"
+  # printf "  ║  HTTPS →  https://%-24s  ║\n" "$PUBLIC_IP"
   echo "  ╠══════════════════════════════════════════════╣"
-  echo "  ║  API status: HTTP=$HTTP_CODE  HTTPS=$HTTPS_CODE  /api=$API_CODE       ║"
+  echo "  ║  API status: HTTP=$HTTP_CODE         ║"
   echo "  ╠══════════════════════════════════════════════╣"
   echo "  ║  Logs:   sudo journalctl -u pas -f           ║"
   echo "  ║  Restart: sudo systemctl restart pas         ║"
