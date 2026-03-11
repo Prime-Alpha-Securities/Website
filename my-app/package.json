@@ -8,7 +8,8 @@
     "preview": "vite preview --host"
   },
   "dependencies": {
-    "@aws-sdk/client-dynamodb": "^3.1005.0",
+    "@aws-sdk/client-dynamodb": "^3.1007.0",
+    "@aws-sdk/client-sesv2": "^3.1007.0",
     "@aws-sdk/util-dynamodb": "^3.996.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
