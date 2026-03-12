@@ -33,9 +33,9 @@ const { SESv2Client, SendEmailCommand }  = require('@aws-sdk/client-sesv2');
 // ── Config ────────────────────────────────────────────────────────────────────
 const PORT_HTTP    = Number(process.env.PORT_HTTP)  || 80;
 const PORT_HTTPS   = Number(process.env.PORT_HTTPS) || 443;
-const REGION       = process.env.AWS_REGION         || 'us-east-1';
-const SES_FROM     = process.env.SES_FROM_EMAIL     || '';   // must be SES-verified
-const NOTIFY_EMAIL = process.env.NOTIFY_EMAIL       || '';   // ops inbox
+const REGION       = process.env.AWS_REGION         || 'eu-west-2';
+const SES_FROM     = process.env.SES_FROM_EMAIL     || 'compliance@primealphasecurities.com';   // must be SES-verified
+const NOTIFY_EMAIL = process.env.NOTIFY_EMAIL       || 'compliance@primealphasecurities.com';   // ops inbox
 const DIST         = path.join(__dirname, 'dist');
 const CERTS        = path.join(__dirname, 'certs');
 
