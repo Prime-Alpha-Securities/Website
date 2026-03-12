@@ -33,8 +33,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 // ─────────────────────────────────────────────────────────────────────────────
 const HOSTNAME    = typeof window !== "undefined" ? window.location.hostname : "";
 const IS_INVESTOR = HOSTNAME.startsWith("investor.");
-const IS_WORKER   = HOSTNAME.startsWith("worker.");
-const IS_PUBLIC   = !IS_INVESTOR && !IS_WORKER;
+const IS_PUBLIC   = !IS_INVESTOR;
 
 // ── URL path → page name map ──────────────────────────────────────────────────
 const ROUTES = {
@@ -55,6 +54,7 @@ const ROUTES = {
   "/terms":            "Terms",
   "/notices":          "Notices",
   "/disclosures":      "Disclosures",
+  "/worker":           "worker",
 };
 const PAGE_TO_PATH = Object.fromEntries(Object.entries(ROUTES).map(([k,v])=>[v,k]));
 PAGE_TO_PATH["home"] = "/";
@@ -482,21 +482,37 @@ function SideBtn({label,active,onClick,badge}){
 // ─────────────────────────────────────────────────────────────────────────────
 //  BRAND LOGO
 // ─────────────────────────────────────────────────────────────────────────────
-function Logo({size=18,dark=false}){
-  const c=dark?"#fff":"var(--head)";
+// Logo — full stacked version (footer, large placements)
+function Logo({height=40,dark=false}){
   return(
-    <span style={{fontFamily:"var(--ff-h)",fontSize:size,fontWeight:800,letterSpacing:"0.05em",color:c,userSelect:"none"}}>
-      PRIME <span style={{color:"var(--blue)"}}>ALPHA</span>
-      <span style={{fontSize:size*0.65,fontWeight:500,color:dark?"rgba(255,255,255,0.5)":"var(--dim)",letterSpacing:"0.1em",display:"block",marginTop:-2}}>SECURITIES</span>
-    </span>
+    <img
+      src="/logo.jpg"
+      alt="Prime Alpha Securities"
+      style={{
+        height,
+        width:"auto",
+        display:"block",
+        // On dark backgrounds (footer, login panel) invert to white
+        filter: dark ? "brightness(0) invert(1)" : "none",
+        userSelect:"none",
+      }}
+    />
   );
 }
-function LogoInline({size=16,dark=false}){
-  const c=dark?"#fff":"var(--head)";
+// LogoInline — compact horizontal version (nav, portal sidebars)
+function LogoInline({height=28,dark=false}){
   return(
-    <span style={{fontFamily:"var(--ff-h)",fontSize:size,fontWeight:800,letterSpacing:"0.05em",color:c,whiteSpace:"nowrap"}}>
-      PRIME <span style={{color:"var(--blue)"}}>ALPHA</span><span style={{fontSize:size*0.7,fontWeight:500,color:dark?"rgba(255,255,255,0.55)":"var(--dim)",letterSpacing:"0.1em"}}> SECURITIES</span>
-    </span>
+    <img
+      src="/logo.jpg"
+      alt="Prime Alpha Securities"
+      style={{
+        height,
+        width:"auto",
+        display:"block",
+        filter: dark ? "brightness(0) invert(1)" : "none",
+        userSelect:"none",
+      }}
+    />
   );
 }
 
@@ -593,8 +609,7 @@ function PublicNav(){
           ))}
         </div>
         <div className="desk-nav" style={{display:"flex",gap:8,marginLeft:16,flexShrink:0}}>
-          <button style={{...T.btnO,padding:"9px 16px",fontSize:11}} onClick={()=>window.location.href=`https://investor.${DOMAIN}`}>Investor Portal</button>
-          <button style={{...T.btnP,padding:"9px 16px",fontSize:11}} onClick={()=>window.location.href=`https://worker.${DOMAIN}`}>Team Access</button>
+          <button style={{...T.btnP,padding:"9px 20px",fontSize:11}} onClick={()=>window.location.href=`https://investor.${DOMAIN}`}>Investor Portal</button>
         </div>
 
         {/* Hamburger (mobile) */}
@@ -632,8 +647,7 @@ function PublicNav(){
             </div>
           ))}
           <div style={{padding:"16px 24px",display:"flex",flexDirection:"column",gap:10}}>
-            <button style={{...T.btnO,width:"100%"}} onClick={()=>window.location.href=`https://investor.${DOMAIN}`}>Investor Portal</button>
-            <button style={{...T.btnP,width:"100%"}} onClick={()=>window.location.href=`https://worker.${DOMAIN}`}>Team Access</button>
+            <button style={{...T.btnP,width:"100%"}} onClick={()=>window.location.href=`https://investor.${DOMAIN}`}>Investor Portal</button>
           </div>
         </div>
       )}
@@ -682,102 +696,158 @@ function PublicFooter(){
 function PublicHome(){
   return(
     <div>
-      {/* Hero */}
-      <section className="px-hero" style={{minHeight:"100vh",display:"flex",alignItems:"center",background:"var(--w)",padding:"100px 40px 80px",position:"relative",overflow:"hidden"}}>
-        <div style={{position:"absolute",inset:0,backgroundImage:"linear-gradient(var(--lg) 1px,transparent 1px),linear-gradient(90deg,var(--lg) 1px,transparent 1px)",backgroundSize:"72px 72px",opacity:0.55,pointerEvents:"none"}}/>
-        <div style={{position:"absolute",right:0,top:0,bottom:0,width:"44%",background:"var(--blue)",clipPath:"polygon(7% 0%,100% 0%,100% 100%,0% 100%)"}}/>
-        <div className="hero-grid" style={{maxWidth:1300,margin:"0 auto",width:"100%",display:"grid",gridTemplateColumns:"1fr 1fr",position:"relative",zIndex:1}}>
-          <div className="fu">
-            <SectionLabel>Flexible Capital Solutions</SectionLabel>
-            <h1 style={{fontFamily:"var(--ff-h)",fontSize:"clamp(50px,7vw,88px)",fontWeight:800,lineHeight:0.92,color:"var(--head)",marginBottom:28,letterSpacing:"-1px"}}>
-              PRIME<br/>
-              <span style={{color:"var(--blue)"}}>ALPHA</span><br/>
-              SECURITIES
+
+      {/* ── Hero ─────────────────────────────────────────────────────────── */}
+      <section style={{
+        minHeight:"100vh",display:"flex",flexDirection:"column",justifyContent:"center",
+        background:"var(--head)",color:"#fff",
+        padding:"120px max(24px,6vw) 80px",
+        position:"relative",overflow:"hidden",
+      }}>
+        <div style={{position:"absolute",inset:0,
+          backgroundImage:"linear-gradient(rgba(255,255,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.03) 1px,transparent 1px)",
+          backgroundSize:"80px 80px",pointerEvents:"none"}}/>
+        <div style={{position:"absolute",top:0,left:0,width:4,bottom:0,background:"var(--blue)"}}/>
+        <div style={{maxWidth:1100,margin:"0 auto",width:"100%",position:"relative",zIndex:1}}>
+          <div className="fu" style={{maxWidth:680}}>
+            <SectionLabel>Alternative Asset Management</SectionLabel>
+            <h1 style={{
+              fontFamily:"var(--ff-h)",
+              fontSize:"clamp(48px,6.5vw,96px)",
+              fontWeight:800,lineHeight:0.9,
+              color:"#fff",letterSpacing:"-1.5px",
+              marginBottom:32,marginTop:8,
+            }}>
+              FLEXIBLE<br/>
+              CAPITAL<br/>
+              <span style={{color:"var(--blue)"}}>SOLUTIONS.</span>
             </h1>
-            <p style={{fontSize:16,color:"var(--dim)",maxWidth:440,lineHeight:1.85,marginBottom:36}}>
-              We deploy flexible capital across private equity, private credit, real estate, and fixed income — structuring bespoke solutions where conventional finance falls short.
+            <p style={{fontSize:17,color:"rgba(255,255,255,0.55)",maxWidth:520,lineHeight:1.85,marginBottom:40,fontWeight:300}}>
+              We deploy capital across private equity, private credit, real estate,
+              and fixed income — structuring bespoke solutions where conventional
+              finance falls short.
             </p>
-            <div style={{display:"flex",gap:14}}>
+            <div style={{display:"flex",gap:14,flexWrap:"wrap"}}>
               <button style={T.btnP} onClick={()=>navigate("What We Do")}>Our Solutions</button>
-              <button style={T.btnO} onClick={()=>navigate("Contact")}>Get In Touch</button>
-            </div>
-            <div style={{display:"flex",gap:40,marginTop:48,paddingTop:40,borderTop:"var(--bdr)"}}>
-              {[["$4.2B+","AUM"],["18%","Avg Net IRR"],["140+","Clients"],["23 yrs","Track Record"]].map(([v,l])=>(
-                <div key={l}>
-                  <div style={{fontFamily:"var(--ff-h)",fontSize:28,fontWeight:800,color:"var(--head)",letterSpacing:"-0.5px"}}>{v}</div>
-                  <div style={{fontSize:11,letterSpacing:"0.1em",textTransform:"uppercase",color:"var(--dim)",marginTop:2}}>{l}</div>
-                </div>
-              ))}
+              <button style={{...T.btnO,borderColor:"rgba(255,255,255,0.3)",color:"#fff"}} onClick={()=>navigate("Contact")}>Get In Touch</button>
             </div>
           </div>
-          <div style={{display:"flex",flexDirection:"column",justifyContent:"center",padding:"0 0 0 72px"}}>
-            {[["$4.2B+","Assets Under Management"],["23","Years of Operation"],["140+","Clients Served"],["18%","Avg. Net IRR (PE)"]].map(([v,l],i)=>(
-              <div key={l} className={`fu fu-${i+1}`} style={{marginBottom:24,borderBottom:"1px solid rgba(255,255,255,0.12)",paddingBottom:22}}>
-                <div style={{fontFamily:"var(--ff-h)",fontSize:44,fontWeight:800,color:"#fff",lineHeight:1,letterSpacing:"-1px"}}>{v}</div>
-                <div style={{fontSize:11,letterSpacing:"0.1em",textTransform:"uppercase",color:"rgba(255,255,255,0.55)",marginTop:6}}>{l}</div>
+          <div className="fu fu-2" style={{
+            display:"grid",gridTemplateColumns:"repeat(4,1fr)",
+            gap:0,marginTop:80,paddingTop:48,
+            borderTop:"1px solid rgba(255,255,255,0.1)",
+          }}>
+            {[["$4.2B+","Assets Under Management"],["18%","Avg. Net IRR"],["140+","Clients Served"],["23 yrs","Track Record"]].map(([v,l],i)=>(
+              <div key={l} style={{padding:"0 32px 0 0",borderRight:i<3?"1px solid rgba(255,255,255,0.08)":"none"}}>
+                <div style={{fontFamily:"var(--ff-h)",fontSize:"clamp(28px,3vw,44px)",fontWeight:800,color:"#fff",letterSpacing:"-0.5px",lineHeight:1}}>{v}</div>
+                <div style={{fontSize:11,letterSpacing:"0.1em",textTransform:"uppercase",color:"rgba(255,255,255,0.4)",marginTop:8}}>{l}</div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Solutions */}
-      <section style={{padding:"88px max(16px, 4vw)",background:"var(--ow)"}}>
-        <div style={{maxWidth:1300,margin:"0 auto"}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginBottom:48}}>
+      {/* ── What We Do ───────────────────────────────────────────────────── */}
+      <section style={{padding:"96px max(24px,6vw)",background:"var(--w)"}}>
+        <div style={{maxWidth:1100,margin:"0 auto"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginBottom:56}}>
             <div>
               <SectionLabel>Capital Solutions</SectionLabel>
-              <h2 style={{...T.hdg,fontSize:44,letterSpacing:"-0.5px"}}>WHAT WE DO</h2>
+              <h2 style={{fontFamily:"var(--ff-h)",fontSize:"clamp(32px,4vw,52px)",fontWeight:800,color:"var(--head)",letterSpacing:"-0.5px"}}>WHAT WE DO</h2>
             </div>
             <button style={T.btnG} onClick={()=>navigate("What We Do")}>View all →</button>
           </div>
-          <div className="rg-4" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:20}}>
-            {[{name:"Private Equity",icon:"◆",desc:"Control and minority investments in market-leading businesses with durable competitive advantages.",p:"Private Equity"},
-              {name:"Private Credit",icon:"◈",desc:"Direct lending, unitranche, and structured credit solutions from $2M to $100M+.",p:"Private Credit"},
-              {name:"Real Estate",icon:"◇",desc:"Value-add and core-plus strategies in logistics, multifamily, and commercial assets.",p:"Real Estate"},
+          <div className="rg-4" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:1,background:"var(--lg)"}}>
+            {[
+              {name:"Private Equity",  icon:"◆",desc:"Control and minority investments in businesses with durable competitive advantages.",p:"Private Equity"},
+              {name:"Private Credit",  icon:"◈",desc:"Direct lending and structured credit solutions from $2M to $100M+.",p:"Private Credit"},
+              {name:"Real Estate",     icon:"◇",desc:"Value-add and core-plus strategies across logistics, multifamily, and commercial.",p:"Real Estate"},
               {name:"Fixed Income & FX",icon:"◉",desc:"Discretionary macro and systematic overlays for institutional portfolios.",p:"Fixed Income & FX"},
             ].map((s,i)=>(
-              <div key={s.name} className={`fu fu-${i+1}`} style={{...T.card,cursor:"pointer",borderTop:"3px solid transparent",transition:"all 0.2s"}}
-                onMouseEnter={e=>{e.currentTarget.style.borderTopColor="var(--blue)";e.currentTarget.style.transform="translateY(-4px)";e.currentTarget.style.boxShadow="var(--sh-md)";}}
-                onMouseLeave={e=>{e.currentTarget.style.borderTopColor="transparent";e.currentTarget.style.transform="translateY(0)";e.currentTarget.style.boxShadow="var(--sh)";}}
+              <div key={s.name} className={`fu fu-${i+1}`}
+                style={{background:"var(--w)",padding:32,cursor:"pointer",transition:"background 0.15s"}}
+                onMouseEnter={e=>e.currentTarget.style.background="var(--ow)"}
+                onMouseLeave={e=>e.currentTarget.style.background="var(--w)"}
                 onClick={()=>navigate(s.p)}>
-                <div style={{fontSize:22,color:"var(--blue)",marginBottom:16}}>{s.icon}</div>
-                <h3 style={{...T.hdg,fontSize:18,marginBottom:10}}>{s.name}</h3>
-                <p style={{fontSize:13,color:"var(--dim)",lineHeight:1.75}}>{s.desc}</p>
-                <div style={{marginTop:18,fontSize:13,color:"var(--blue)",fontWeight:700}}>Explore →</div>
+                <div style={{fontSize:20,color:"var(--blue)",marginBottom:20}}>{s.icon}</div>
+                <h3 style={{fontFamily:"var(--ff-h)",fontSize:20,fontWeight:700,color:"var(--head)",marginBottom:12}}>{s.name}</h3>
+                <p style={{fontSize:13,color:"var(--dim)",lineHeight:1.8,marginBottom:20}}>{s.desc}</p>
+                <div style={{fontSize:12,color:"var(--blue)",fontWeight:700,letterSpacing:"0.05em"}}>EXPLORE →</div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Research teaser */}
-      <section style={{padding:"88px max(16px, 4vw)",background:"var(--w)"}}>
-        <div style={{maxWidth:1300,margin:"0 auto"}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginBottom:40}}>
+      {/* ── About strip ──────────────────────────────────────────────────── */}
+      <section style={{background:"var(--head)",padding:"80px max(24px,6vw)"}}>
+        <div style={{maxWidth:1100,margin:"0 auto",display:"grid",gridTemplateColumns:"1fr 1fr",gap:80,alignItems:"center"}} className="hero-grid">
+          <div>
+            <SectionLabel>About the Firm</SectionLabel>
+            <h2 style={{fontFamily:"var(--ff-h)",fontSize:"clamp(28px,3.5vw,48px)",fontWeight:800,color:"#fff",letterSpacing:"-0.5px",marginBottom:20}}>
+              PRECISION CAPITAL<br/>SINCE 2001
+            </h2>
+            <p style={{color:"rgba(255,255,255,0.55)",fontSize:15,lineHeight:1.9,marginBottom:28}}>
+              Prime Alpha Securities is a global alternative asset manager with offices in
+              New York, London, and Singapore. We deploy capital with conviction and structure
+              solutions where conventional managers cannot.
+            </p>
+            <button style={{...T.btnO,borderColor:"rgba(255,255,255,0.3)",color:"#fff"}} onClick={()=>navigate("Overview")}>Who We Are →</button>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:1,background:"rgba(255,255,255,0.06)"}}>
+            {[["SEC","Registered Investment Adviser"],["FCA","Financial Conduct Authority"],["MAS","Monetary Authority of Singapore"],["ILPA","Member — LP Association"]].map(([k,v])=>(
+              <div key={k} style={{background:"rgba(255,255,255,0.03)",padding:"24px 20px"}}>
+                <div style={{fontFamily:"var(--ff-h)",fontSize:22,fontWeight:800,color:"var(--blue)",marginBottom:6}}>{k}</div>
+                <div style={{fontSize:11,color:"rgba(255,255,255,0.4)",lineHeight:1.6}}>{v}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Research ─────────────────────────────────────────────────────── */}
+      <section style={{padding:"96px max(24px,6vw)",background:"var(--ow)"}}>
+        <div style={{maxWidth:1100,margin:"0 auto"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginBottom:48}}>
             <div>
               <SectionLabel>Latest Thinking</SectionLabel>
-              <h2 style={{...T.hdg,fontSize:40,letterSpacing:"-0.5px"}}>RESEARCH & INSIGHTS</h2>
+              <h2 style={{fontFamily:"var(--ff-h)",fontSize:"clamp(32px,4vw,52px)",fontWeight:800,color:"var(--head)",letterSpacing:"-0.5px"}}>RESEARCH & INSIGHTS</h2>
             </div>
             <button style={T.btnG} onClick={()=>navigate("Research")}>All articles →</button>
           </div>
           <div className="rg-2" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
             {SEED["articles"].slice(0,2).map((a,i)=>(
-              <div key={a.articleId} className={`fu fu-${i+1}`} style={{...T.card,display:"flex",flexDirection:"column",gap:12,cursor:"pointer",transition:"box-shadow 0.15s,border-color 0.15s"}}
-                onMouseEnter={e=>{e.currentTarget.style.boxShadow="var(--sh-md)";e.currentTarget.style.borderColor="var(--blue)";}}
-                onMouseLeave={e=>{e.currentTarget.style.boxShadow="var(--sh)";e.currentTarget.style.borderColor="#DDDFE5";}}>
-                <div style={{display:"flex",justifyContent:"space-between"}}>
+              <div key={a.articleId} className={`fu fu-${i+1}`}
+                style={{...T.card,display:"flex",flexDirection:"column",gap:14,cursor:"pointer",transition:"all 0.2s",borderLeft:"3px solid transparent"}}
+                onMouseEnter={e=>{e.currentTarget.style.borderLeftColor="var(--blue)";e.currentTarget.style.boxShadow="var(--sh-md)";}}
+                onMouseLeave={e=>{e.currentTarget.style.borderLeftColor="transparent";e.currentTarget.style.boxShadow="var(--sh)";}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                   <span style={T.tag()}>{a.category}</span>
                   <span style={{fontSize:11,color:"var(--dim)",fontFamily:"var(--ff-m)"}}>{a.date}</span>
                 </div>
-                <h3 style={{...T.hdg,fontSize:18,lineHeight:1.3}}>{a.title}</h3>
-                <p style={{fontSize:13,color:"var(--dim)",lineHeight:1.75,flex:1}}>{a.excerpt}</p>
-                <div style={{fontSize:12,color:"var(--dim)"}}>{a.author}</div>
+                <h3 style={{fontFamily:"var(--ff-h)",fontSize:20,fontWeight:700,color:"var(--head)",lineHeight:1.25}}>{a.title}</h3>
+                <p style={{fontSize:13,color:"var(--dim)",lineHeight:1.8,flex:1}}>{a.excerpt}</p>
+                <div style={{fontSize:12,color:"var(--dim)",borderTop:"1px solid var(--lg)",paddingTop:12}}>{a.author}</div>
               </div>
             ))}
           </div>
         </div>
       </section>
+
+      {/* ── CTA ──────────────────────────────────────────────────────────── */}
+      <section style={{background:"var(--blue)",padding:"80px max(24px,6vw)"}}>
+        <div style={{maxWidth:1100,margin:"0 auto",display:"flex",justifyContent:"space-between",alignItems:"center",gap:40,flexWrap:"wrap"}}>
+          <div>
+            <div style={{fontSize:10,fontWeight:700,letterSpacing:"0.18em",textTransform:"uppercase",color:"rgba(255,255,255,0.6)",marginBottom:10}}>Speak With Us</div>
+            <h2 style={{fontFamily:"var(--ff-h)",fontSize:"clamp(28px,4vw,48px)",fontWeight:800,color:"#fff",letterSpacing:"-0.5px"}}>READY TO INVEST?</h2>
+          </div>
+          <div style={{display:"flex",gap:14,flexWrap:"wrap"}}>
+            <button style={{...T.btnP,background:"#fff",color:"var(--blue)"}} onClick={()=>navigate("Contact")}>Get In Touch</button>
+            <button style={{...T.btnO,borderColor:"rgba(255,255,255,0.4)",color:"#fff"}} onClick={()=>window.location.href=`https://investor.${DOMAIN}`}>Investor Portal</button>
+          </div>
+        </div>
+      </section>
+
     </div>
   );
 }
@@ -1137,7 +1207,7 @@ function LoginPage({type,onSuccess}){
           <div style={{marginTop:32,padding:"14px 18px",background:"rgba(0,87,255,0.15)",borderRadius:"var(--r)",fontSize:12,color:"rgba(255,255,255,0.6)",fontFamily:"var(--ff-m)",lineHeight:1.7}}>
             {type==="investor"
               ? "investor.primealphasecurities.com"
-              : "worker.primealphasecurities.com"}
+              : "primealphasecurities.com/worker"}
           </div>
         </div>
         <div style={{fontSize:11,color:"rgba(255,255,255,0.2)"}}>© {new Date().getFullYear()} Prime Alpha Securities LLC</div>
@@ -2203,7 +2273,7 @@ export default function App(){
 
   // Document title
   useEffect(()=>{
-    document.title=IS_INVESTOR?"Investor Portal — Prime Alpha Securities":IS_WORKER?"Team Console — Prime Alpha Securities":"Prime Alpha Securities";
+    document.title=IS_INVESTOR?"Investor Portal — Prime Alpha Securities":"Prime Alpha Securities";
   },[]);
 
   // Browser back/forward
@@ -2230,14 +2300,11 @@ export default function App(){
     if(investorUser)return<InvestorPortal user={investorUser} setUser={siu} onLogout={()=>siu(null)}/>;
     return<LoginPage type="investor" onSuccess={u=>siu(u)}/>;
   }
-  if(IS_WORKER){
-    if(workerUser)return<WorkerPortal user={workerUser} onLogout={()=>swu(null)}/>;
-    return<LoginPage type="worker" onSuccess={u=>swu(u)}/>;
-  }
 
   // ── Public URL routing ────────────────────────────────────────────
   const renderPage=()=>{
     switch(page){
+      case"worker":          return workerUser?<WorkerPortal user={workerUser} onLogout={()=>{swu(null);navigate("home");}}/>:<LoginPage type="worker" onSuccess={u=>swu(u)}/>;
       case"home":             return<PublicHome/>;
       case"Overview":         return<WhoWeAre sub="Overview"/>;
       case"Culture":          return<WhoWeAre sub="Culture"/>;

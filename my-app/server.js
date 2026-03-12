@@ -117,25 +117,58 @@ async function sendEmail({ to, subject, html, text }) {
 
 
 // ── Email templates ───────────────────────────────────────────────────────────
-function wrapHtml(title, bodyHtml) {
-  return `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;background:#f7f8fa;padding:32px 0;margin:0">
-<div style="max-width:600px;margin:0 auto;background:#fff;border-radius:8px;overflow:hidden;border:1px solid #e2e8f0">
-  <div style="background:#0B0F1A;padding:24px 32px;display:flex;align-items:center;gap:12px">
-    <span style="font-family:Georgia,serif;font-weight:900;font-size:18px;color:#fff;letter-spacing:-0.5px">PRIME ALPHA</span>
-    <span style="font-size:10px;font-weight:700;letter-spacing:0.15em;color:#0057FF;text-transform:uppercase">Securities</span>
-  </div>
-  <div style="padding:32px">${bodyHtml}</div>
-  <div style="background:#f7f8fa;padding:16px 32px;font-size:11px;color:#94a3b8;border-top:1px solid #e2e8f0">
-    Prime Alpha Securities LLC · 745 Fifth Avenue, 32nd Floor · New York, NY 10151<br>
-    This is an automated notification. Do not reply to this email.
-  </div>
-</div></body></html>`;
+function wrapHtml(title, bodyHtml, { accentColor = '#0057FF' } = {}) {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#F7F8FA;font-family:'Helvetica Neue',Arial,sans-serif">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#F7F8FA;padding:40px 0">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:4px;overflow:hidden;border:1px solid #E2E8F0;max-width:600px">
+  <!-- Header -->
+  <tr>
+    <td style="background:#0B0F1A;padding:28px 36px">
+      <table cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="border-left:3px solid ${accentColor};padding-left:14px">
+            <div style="font-family:Georgia,serif;font-size:20px;font-weight:900;color:#fff;letter-spacing:-0.5px">PRIME ALPHA</div>
+            <div style="font-size:9px;font-weight:700;letter-spacing:0.18em;color:${accentColor};text-transform:uppercase;margin-top:2px">SECURITIES LLC</div>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <!-- Body -->
+  <tr><td style="padding:36px">${bodyHtml}</td></tr>
+  <!-- Footer -->
+  <tr>
+    <td style="background:#F7F8FA;padding:20px 36px;border-top:1px solid #E2E8F0">
+      <p style="margin:0;font-size:11px;color:#94A3B8;line-height:1.6">
+        Prime Alpha Securities LLC · 745 Fifth Avenue, 32nd Floor · New York, NY 10151<br>
+        Registered Investment Adviser · SEC · FCA · MAS<br>
+        <span style="color:#CBD5E1">This is an automated notification from Prime Alpha Securities. Please do not reply to this email.</span>
+      </p>
+    </td>
+  </tr>
+</table>
+</td></tr></table>
+</body></html>`;
 }
 
 function row(label, value) {
   if (!value) return '';
-  return `<tr><td style="padding:8px 0;font-size:13px;color:#64748b;width:160px;vertical-align:top">${label}</td>
-          <td style="padding:8px 0;font-size:13px;color:#0B0F1A;font-weight:600">${value}</td></tr>`;
+  return `<tr>
+    <td style="padding:9px 0;font-size:12px;color:#64748B;width:150px;vertical-align:top;text-transform:uppercase;letter-spacing:0.06em;font-weight:600">${label}</td>
+    <td style="padding:9px 0;font-size:13px;color:#0B0F1A;font-weight:600;border-bottom:1px solid #F1F5F9">${value}</td>
+  </tr>`;
+}
+
+function pill(text, color = '#0057FF') {
+  return `<span style="display:inline-block;background:${color}18;color:${color};border:1px solid ${color}33;border-radius:2px;padding:2px 10px;font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase">${text}</span>`;
+}
+
+function ctaButton(text, href, bg = '#0057FF') {
+  return `<a href="${href}" style="display:inline-block;margin-top:24px;background:${bg};color:#fff;padding:13px 28px;border-radius:3px;text-decoration:none;font-weight:700;font-size:13px;letter-spacing:0.05em;text-transform:uppercase">${text}</a>`;
 }
 
 // ── Notification handlers ─────────────────────────────────────────────────────
@@ -143,92 +176,94 @@ function row(label, value) {
 // POST /api/notify/enquiry  — general contact form
 async function notifyEnquiry(data) {
   const html = wrapHtml('New Contact Enquiry', `
-    <h2 style="margin:0 0 4px;font-size:22px;color:#0B0F1A">New Contact Enquiry</h2>
-    <p style="margin:0 0 24px;color:#64748b;font-size:13px">Submitted via primealphasecurities.com/contact</p>
-    <table style="width:100%;border-collapse:collapse">
+    <p style="margin:0 0 6px;font-size:22px;font-weight:800;color:#0B0F1A;font-family:Georgia,serif">New Contact Enquiry</p>
+    <p style="margin:0 0 28px;color:#64748B;font-size:13px">Submitted via primealphasecurities.com/contact · ${new Date().toUTCString()}</p>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
       ${row('Name', data.name)}
       ${row('Email', data.email)}
-      ${row('Organisation', data.org)}
-      ${row('Subject', data.subject)}
+      ${row('Organisation', data.org || '—')}
+      ${row('Subject', data.subject || '—')}
     </table>
-    <div style="margin-top:20px;padding:16px;background:#f7f8fa;border-radius:6px;border-left:3px solid #0057FF">
-      <div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#0057FF;margin-bottom:8px">Message</div>
-      <p style="margin:0;font-size:14px;color:#0B0F1A;line-height:1.7">${(data.message||'').replace(/\n/g,'<br>')}</p>
+    <div style="margin-top:20px;padding:20px;background:#F7F8FA;border-radius:3px;border-left:3px solid #0057FF">
+      <div style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#0057FF;margin-bottom:10px">Message</div>
+      <p style="margin:0;font-size:14px;color:#0B0F1A;line-height:1.75">${(data.message||'').replace(/\n/g,'<br>')}</p>
     </div>
-    <a href="mailto:${data.email}?subject=Re: ${encodeURIComponent(data.subject||'Your enquiry')}" 
-       style="display:inline-block;margin-top:24px;background:#0057FF;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:700;font-size:14px">
-      Reply to ${data.name}
-    </a>`);
-  const text = `New enquiry from ${data.name} (${data.email})\nOrg: ${data.org||'—'}\nSubject: ${data.subject||'—'}\n\n${data.message}`;
-  await sendEmail({ to: NOTIFY_EMAIL, subject: `[PAS] New enquiry from ${data.name}`, html, text });
+    ${ctaButton(`Reply to ${data.name}`, `mailto:${data.email}?subject=Re: ${encodeURIComponent(data.subject||'Your enquiry — Prime Alpha Securities')}`)}
+  `);
+  const text = `NEW CONTACT ENQUIRY — Prime Alpha Securities\n\nName: ${data.name}\nEmail: ${data.email}\nOrg: ${data.org||'—'}\nSubject: ${data.subject||'—'}\n\n${data.message}`;
+  await sendEmail({ to: NOTIFY_EMAIL, subject: `[PAS] Enquiry from ${data.name}${data.org?' ('+data.org+')':''}`, html, text });
 }
 
 // POST /api/notify/credit  — private credit application
 async function notifyCredit(data) {
+  const fmtAmount = data.amount ? `$${Number(data.amount).toLocaleString('en-US')}` : '—';
   const html = wrapHtml('New Credit Application', `
-    <h2 style="margin:0 0 4px;font-size:22px;color:#0B0F1A">New Credit Application</h2>
-    <p style="margin:0 0 24px;color:#64748b;font-size:13px">Submitted via primealphasecurities.com/private-credit · App ID: <code>${data.appId||'—'}</code></p>
-    <table style="width:100%;border-collapse:collapse">
+    <p style="margin:0 0 6px;font-size:22px;font-weight:800;color:#0B0F1A;font-family:Georgia,serif">New Credit Application</p>
+    <p style="margin:0 0 6px;color:#64748B;font-size:13px">Submitted via primealphasecurities.com/private-credit · ${new Date().toUTCString()}</p>
+    <p style="margin:0 0 28px">${pill('App ID: ' + (data.appId||'—'))} ${pill(data.type==='business'?'Business / Corporate':'Individual / HNW','#0B0F1A')} ${pill(data.loanType==='secured'?'Secured':'Unsecured', data.loanType==='secured'?'#00875A':'#B45309')}</p>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
       ${row('Applicant', data.name)}
       ${row('Email', data.email)}
-      ${row('Phone', data.phone)}
-      ${row('Type', data.type === 'business' ? 'Business / Corporate' : 'Individual / HNW')}
-      ${row('Loan Type', data.loanType)}
-      ${row('Amount Requested', data.amount ? `$${Number(data.amount).toLocaleString()}` : data.amount)}
-      ${row('Availability', data.availability)}
+      ${row('Phone', data.phone || '—')}
+      ${row('Amount Requested', fmtAmount)}
+      ${row('Availability', data.availability || '—')}
     </table>
-    ${data.purpose ? `<div style="margin-top:20px;padding:16px;background:#f7f8fa;border-radius:6px;border-left:3px solid #0057FF">
-      <div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#0057FF;margin-bottom:8px">Purpose / Business Description</div>
-      <p style="margin:0;font-size:14px;color:#0B0F1A;line-height:1.7">${data.purpose.replace(/\n/g,'<br>')}</p>
+    ${data.purpose ? `<div style="padding:20px;background:#F7F8FA;border-radius:3px;border-left:3px solid #0057FF;margin-bottom:20px">
+      <div style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#0057FF;margin-bottom:10px">Purpose / Business Description</div>
+      <p style="margin:0;font-size:14px;color:#0B0F1A;line-height:1.75">${data.purpose.replace(/\n/g,'<br>')}</p>
     </div>` : ''}
-    <a href="mailto:${data.email}?subject=Re: Your credit application to Prime Alpha Securities"
-       style="display:inline-block;margin-top:24px;background:#0057FF;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:700;font-size:14px">
-      Contact Applicant
-    </a>`);
-  const text = `New credit application\nApplicant: ${data.name} (${data.email})\nPhone: ${data.phone||'—'}\nType: ${data.type} / ${data.loanType}\nAmount: ${data.amount}\n\n${data.purpose}`;
-  await sendEmail({ to: NOTIFY_EMAIL, subject: `[PAS Credit] New application — ${data.name} — $${data.amount}`, html, text });
+    ${ctaButton('Contact Applicant', `mailto:${data.email}?subject=Re: Your credit application — Prime Alpha Securities`)}
+  `);
+  const text = `NEW CREDIT APPLICATION — Prime Alpha Securities\n\nApp ID: ${data.appId||'—'}\nApplicant: ${data.name} (${data.email})\nPhone: ${data.phone||'—'}\nType: ${data.type} / ${data.loanType}\nAmount: ${fmtAmount}\nAvailability: ${data.availability||'—'}\n\nPurpose:\n${data.purpose||'—'}`;
+  await sendEmail({ to: NOTIFY_EMAIL, subject: `[PAS Credit] ${fmtAmount} application — ${data.name}`, html, text });
 }
 
 // POST /api/notify/calendar  — new event, email each assigned worker
 async function notifyCalendar(data) {
-  // data: { event: {...}, workers: [{name,email,phone,...}] }
   const { event, workers = [] } = data;
   if (!workers.length) return;
-
-  const dateStr = event.date ? new Date(event.date + 'T12:00:00').toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' }) : event.date;
+  const dateStr = event.date
+    ? new Date(event.date + 'T12:00:00').toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' })
+    : event.date;
 
   await Promise.all(workers.map(async (w) => {
-    // ── Email ──────────────────────────────────────────────────────────────
-    if (w.email) {
-      const html = wrapHtml('Calendar Event — You Have Been Assigned', `
-        <h2 style="margin:0 0 4px;font-size:22px;color:#0B0F1A">You've been added to a calendar event</h2>
-        <p style="margin:0 0 28px;color:#64748b;font-size:13px">Hi ${w.name}, a new event has been scheduled and you have been assigned.</p>
-        <div style="background:#0057FF;border-radius:8px;padding:24px 28px;margin-bottom:24px">
-          <div style="font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.6);margin-bottom:6px">Event</div>
-          <div style="font-family:Georgia,serif;font-size:24px;font-weight:900;color:#fff;margin-bottom:16px">${event.title}</div>
-          <div style="display:flex;gap:32px">
-            <div>
-              <div style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.6);margin-bottom:4px">Date</div>
+    if (!w.email) return;
+    const html = wrapHtml('Calendar Assignment', `
+      <p style="margin:0 0 6px;font-size:22px;font-weight:800;color:#0B0F1A;font-family:Georgia,serif">You've been assigned to an event</p>
+      <p style="margin:0 0 28px;color:#64748B;font-size:13px">Hi ${w.name}, the following event has been added to your schedule.</p>
+      <div style="background:#0B0F1A;border-radius:3px;padding:28px;margin-bottom:24px">
+        <div style="font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#0057FF;margin-bottom:10px">Calendar Event</div>
+        <div style="font-family:Georgia,serif;font-size:22px;font-weight:900;color:#fff;margin-bottom:20px;line-height:1.2">${event.title}</div>
+        <table cellpadding="0" cellspacing="0">
+          <tr>
+            <td style="padding-right:40px">
+              <div style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:4px">Date</div>
               <div style="font-size:15px;font-weight:700;color:#fff">${dateStr}</div>
-            </div>
-          </div>
-        </div>
-        <p style="font-size:13px;color:#64748b;margin:0">Please ensure this is in your diary. Contact your team lead if you have any conflicts.</p>`);
-      const text = `Hi ${w.name},\n\nYou have been assigned to: ${event.title}\nDate: ${dateStr}\n\nPrime Alpha Securities Team Console`;
-      await sendEmail({ to: w.email, subject: `[PAS Calendar] You've been assigned: ${event.title} — ${dateStr}`, html, text });
-    }
-
+            </td>
+            <td>
+              <div style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-bottom:4px">Assigned By</div>
+              <div style="font-size:15px;font-weight:700;color:#fff">Prime Alpha Team Console</div>
+            </td>
+          </tr>
+        </table>
+      </div>
+      <p style="font-size:13px;color:#64748B;margin:0;line-height:1.7">Please ensure this is in your diary. If you have a conflict, contact your team lead as soon as possible.</p>
+    `);
+    const text = `Hi ${w.name},\n\nYou have been assigned to: ${event.title}\nDate: ${dateStr}\n\nPrime Alpha Securities · Team Console`;
+    await sendEmail({ to: w.email, subject: `[PAS] Calendar: ${event.title} — ${dateStr}`, html, text });
   }));
 }
 
 // POST /api/notify/worker-email  — worker compose tab sends real email
 async function notifyWorkerEmail(data) {
-  // data: { to, subject, body, sentBy }
   if (!data.to || !data.subject || !data.body) return;
   const html = wrapHtml(data.subject, `
-    <p style="font-size:15px;color:#0B0F1A;line-height:1.8;white-space:pre-line">${data.body.replace(/\n/g,'<br>')}</p>
-    <hr style="border:none;border-top:1px solid #e2e8f0;margin:28px 0">
-    <p style="font-size:12px;color:#94a3b8">Sent via Prime Alpha Securities Team Console${data.sentBy ? ` by ${data.sentBy}` : ''}</p>`);
+    <p style="font-size:15px;color:#0B0F1A;line-height:1.85;white-space:pre-line">${data.body.replace(/\n/g,'<br>')}</p>
+    <hr style="border:none;border-top:1px solid #E2E8F0;margin:32px 0">
+    <p style="font-size:12px;color:#94A3B8;margin:0">
+      Sent via Prime Alpha Securities Team Console${data.sentBy ? ` by <strong style="color:#64748B">${data.sentBy}</strong>` : ''}
+    </p>
+  `);
   await sendEmail({ to: data.to, subject: data.subject, html, text: data.body });
 }
 

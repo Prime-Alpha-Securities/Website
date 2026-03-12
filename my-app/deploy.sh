@@ -97,19 +97,19 @@ ok "package.json set to CommonJS for server"
 step "Setting up TLS"
 mkdir -p "$APP_DIR/certs"
 
-if [[ -f "$APP_DIR/certs/webkey.pem" && -f "$APP_DIR/certs/cert.pem" ]]; then
+if [[ -f "$APP_DIR/certs/key.pem" && -f "$APP_DIR/certs/cert.pem" ]]; then
   ok "Using existing certs in ./certs/"
 else
-  echo "  No certs/webkey.pem found."
+  echo "  No certs/key.pem found."
   echo "  Generating self-signed cert (browser will show 'Not secure' — fine for now)"
   PUBLIC_IP=$(curl -s --max-time 5 http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null || hostname -I | awk '{print $1}')
   openssl req -x509 -newkey rsa:2048 \
-    -keyout "$APP_DIR/certs/webkey.pem" \
+    -keyout "$APP_DIR/certs/key.pem" \
     -out    "$APP_DIR/certs/cert.pem" \
     -days 825 -nodes \
     -subj "/C=US/O=PrimeAlphaSecurities/CN=$PUBLIC_IP" \
-    -addext "subjectAltName=IP:$PUBLIC_IP,DNS:localhost" 2>/dev/null
-  chmod 600 "$APP_DIR/certs/webkey.pem"
+    -addext "subjectAltName=IP:$PUBLIC_IP,DNS:localhost,DNS:primealphasecurities.com,DNS:investor.primealphasecurities.com" 2>/dev/null
+  chmod 600 "$APP_DIR/certs/key.pem"
   ok "Self-signed cert generated for $PUBLIC_IP"
 fi
 
@@ -143,9 +143,9 @@ StandardError=append:${APP_DIR}/server.log
 Environment=NODE_ENV=production
 Environment=PORT_HTTP=80
 Environment=PORT_HTTPS=443
-Environment=AWS_REGION=eu-west-2
-Environment=SES_FROM_EMAIL=compliance@primealphasecurities.com
-Environment=NOTIFY_EMAIL=compliance@primealphasecurities.com
+Environment=AWS_REGION=us-east-1
+Environment=SES_FROM_EMAIL=noreply@primealphasecurities.com
+Environment=NOTIFY_EMAIL=ops@primealphasecurities.com
 
 [Install]
 WantedBy=multi-user.target
@@ -161,22 +161,22 @@ systemctl start "$SVC"
 sleep 3
 
 HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/ 2>/dev/null || echo 000)
-# HTTPS_CODE=$(curl -sk -o /dev/null -w "%{http_code}" https://localhost/ 2>/dev/null || echo 000)
-# API_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/api/investor 2>/dev/null || echo 000)
+HTTPS_CODE=$(curl -sk -o /dev/null -w "%{http_code}" https://localhost/ 2>/dev/null || echo 000)
+API_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/api/investor 2>/dev/null || echo 000)
 
 PUBLIC_IP=$(curl -s --max-time 5 http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null \
             || hostname -I | awk '{print $1}')
 
 echo ""
-if [[ "$HTTP_CODE" == "200" ]]; then
+if [[ "$HTTP_CODE" == "200" && "$HTTPS_CODE" == "200" ]]; then
   echo -e "${GREEN}"
   echo "  ╔══════════════════════════════════════════════╗"
   echo "  ║          DEPLOYMENT SUCCESSFUL  ✓            ║"
   echo "  ╠══════════════════════════════════════════════╣"
   printf "  ║  HTTP  →  http://%-25s  ║\n"  "$PUBLIC_IP"
-  # printf "  ║  HTTPS →  https://%-24s  ║\n" "$PUBLIC_IP"
+  printf "  ║  HTTPS →  https://%-24s  ║\n" "$PUBLIC_IP"
   echo "  ╠══════════════════════════════════════════════╣"
-  echo "  ║  API status: HTTP=$HTTP_CODE         ║"
+  echo "  ║  API status: HTTP=$HTTP_CODE  HTTPS=$HTTPS_CODE  /api=$API_CODE       ║"
   echo "  ╠══════════════════════════════════════════════╣"
   echo "  ║  Logs:   sudo journalctl -u pas -f           ║"
   echo "  ║  Restart: sudo systemctl restart pas         ║"
@@ -189,6 +189,18 @@ if [[ "$HTTP_CODE" == "200" ]]; then
     echo "  DynamoDB: returned $API_CODE — check IAM role has DynamoDB access"
     echo "  App still works — falls back to demo data"
   fi
+  echo ""
+  echo "  ── SUBDOMAIN SETUP (required for investor portal) ──────────"
+  echo "  In Route 53 (or your DNS provider), create these A records"
+  echo "  pointing to this EC2 IP: $PUBLIC_IP"
+  echo ""
+  echo "    primealphasecurities.com          →  $PUBLIC_IP"
+  echo "    investor.primealphasecurities.com →  $PUBLIC_IP"
+  echo ""
+  echo "  The server already handles both — the React app detects the"
+  echo "  subdomain client-side and loads the Investor Portal."
+  echo "  Worker console is at: https://primealphasecurities.com/worker"
+  echo "  ────────────────────────────────────────────────────────────"
 else
   systemctl status "$SVC" --no-pager -l | tail -20
   die "Server health check failed (HTTP=$HTTP_CODE HTTPS=$HTTPS_CODE). Check: sudo journalctl -u pas -n 50"
