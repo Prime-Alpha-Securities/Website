@@ -34,7 +34,7 @@ const { SESv2Client, SendEmailCommand }  = require('@aws-sdk/client-sesv2');
 const PORT_HTTP    = Number(process.env.PORT_HTTP)  || 80;
 const PORT_HTTPS   = Number(process.env.PORT_HTTPS) || 443;
 const REGION       = process.env.AWS_REGION         || 'us-east-1';
-const SES_FROM     = process.env.SES_FROM_EMAIL     || '';   // must be SES-verified
+const SES_FROM     = process.env.SES_FROM_EMAIL     || 'aurel.botouli@primealphasecurities.com';   // must be SES-verified
 const NOTIFY_EMAIL = process.env.NOTIFY_EMAIL       || 'aurel.botouli@primealphasecurities.com';
 const DIST         = path.join(__dirname, 'dist');
 const CERTS        = path.join(__dirname, 'certs');
@@ -347,7 +347,7 @@ function handleStatic(req, res) {
   });
   if (urlPath === '/' || !path.extname(urlPath)) serve(path.join(DIST,'index.html'), null);
   else serve(resolved, path.join(DIST,'index.html'));
-}}
+}
 
 // ── Single handler — ALB terminates TLS, EC2 always receives plain HTTP ───────
 // The ALB handles HTTP→HTTPS redirect if needed. Server just serves everything.
