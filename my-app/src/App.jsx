@@ -20,7 +20,7 @@
 //    articles           PK: articleId   (S)
 //    enquiries          PK: enquiryId   (S)
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, createContext, useContext } from "react";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ─────────────────────────────────────────────────────────────────────────────
@@ -32,13 +32,19 @@ import { useState, useEffect, useRef, useCallback } from "react";
 //  RUNTIME CONTEXT  — detects which subdomain we're on
 // ─────────────────────────────────────────────────────────────────────────────
 const HOSTNAME    = typeof window !== "undefined" ? window.location.hostname : "";
-const IS_INVESTOR = HOSTNAME.startsWith("investor.");
-const IS_PUBLIC   = !IS_INVESTOR;
+const IS_INVESTOR = false;  // Now path-based: /investor — not subdomain
+const IS_PUBLIC   = true;
+
+// Language context — "en" | "fr"
+const LangCtx = createContext(["en", ()=>{}]);
+const useLang = () => useContext(LangCtx);
 
 // ── URL path → page name map ──────────────────────────────────────────────────
 const ROUTES = {
   "/":                 "home",
   "/who-we-are":       "Overview",
+  "/our-story":        "Our Story",
+  "/the-team":         "The Team",
   "/culture":          "Culture",
   "/leadership":       "Leadership",
   "/civic-priorities": "Civic Priorities",
@@ -46,7 +52,8 @@ const ROUTES = {
   "/private-equity":   "Private Equity",
   "/private-credit":   "Private Credit",
   "/real-estate":      "Real Estate",
-  "/fixed-income-fx":  "Fixed Income & FX",
+  "/commodities":      "Commodities",
+  "/fund-terms":       "Fund Terms",
   "/careers":          "Careers",
   "/research":         "Research",
   "/contact":          "Contact",
@@ -55,6 +62,7 @@ const ROUTES = {
   "/notices":          "Notices",
   "/disclosures":      "Disclosures",
   "/worker":           "worker",
+  "/investor":         "investor",
 };
 const PAGE_TO_PATH = Object.fromEntries(Object.entries(ROUTES).map(([k,v])=>[v,k]));
 PAGE_TO_PATH["home"] = "/";
@@ -486,13 +494,13 @@ function SideBtn({label,active,onClick,badge}){
 function Logo({height=40,dark=false}){
   return(
     <img
-      src="/logo.jpg"
+      src="/logo.png"
       alt="Prime Alpha Securities"
       style={{
         height,
         width:"auto",
         display:"block",
-        // On dark backgrounds (footer, login panel) invert to white
+        // PNG is transparent — on dark backgrounds apply white tint if needed
         filter: dark ? "brightness(0) invert(1)" : "none",
         userSelect:"none",
       }}
@@ -503,7 +511,7 @@ function Logo({height=40,dark=false}){
 function LogoInline({height=28,dark=false}){
   return(
     <img
-      src="/logo.jpg"
+      src="/logo.png"
       alt="Prime Alpha Securities"
       style={{
         height,
@@ -564,6 +572,7 @@ function SubmitSuccess({email, message}){
 //  PUBLIC NAV
 // ─────────────────────────────────────────────────────────────────────────────
 function PublicNav(){
+  const [lang,setLang]=useLang();
   const [scrolled,ss]=useState(false);
   const [open,so]=useState(null);
   const [menuOpen,sm]=useState(false);
@@ -572,9 +581,9 @@ function PublicNav(){
     window.addEventListener("scroll",fn);return()=>window.removeEventListener("scroll",fn);
   },[]);
   const groups=[
-    {label:"Who We Are",items:["Overview","Culture","Leadership","Civic Priorities"]},
-    {label:"What We Do",items:["Overview","Private Equity","Private Credit","Real Estate","Fixed Income & FX"]},
-    {label:"Careers",items:[]},
+    {label:"Who We Are",items:["Overview","Our Story","The Team","Culture","Civic Priorities"]},
+    {label:"What We Do",items:["Overview","Private Equity","Private Credit","Commodities","Real Estate"]},
+    {label:"Fund Terms",items:[]},
     {label:"Research",items:[]},
     {label:"Contact",items:[]},
   ];
@@ -608,8 +617,17 @@ function PublicNav(){
             </div>
           ))}
         </div>
-        <div className="desk-nav" style={{display:"flex",gap:8,marginLeft:16,flexShrink:0}}>
-          <button style={{...T.btnP,padding:"9px 20px",fontSize:11}} onClick={()=>window.location.href=`https://investor.${DOMAIN}`}>Investor Portal</button>
+        <div className="desk-nav" style={{display:"flex",gap:8,marginLeft:16,flexShrink:0,alignItems:"center"}}>
+          <button
+            onClick={()=>setLang(l=>l==="en"?"fr":"en")}
+            style={{padding:"7px 12px",fontSize:11,fontWeight:700,letterSpacing:"0.08em",
+              background:"none",border:"1px solid var(--lg)",borderRadius:"var(--r)",
+              color:"var(--dim)",cursor:"pointer",transition:"all 0.15s"}}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor="var(--blue)";e.currentTarget.style.color="var(--blue)";}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor="var(--lg)";e.currentTarget.style.color="var(--dim)";}}>
+            {lang==="en"?"FR":"EN"}
+          </button>
+          <button style={{...T.btnP,padding:"9px 20px",fontSize:11}} onClick={()=>navigate("investor")}>Investor Portal</button>
         </div>
 
         {/* Hamburger (mobile) */}
@@ -647,7 +665,10 @@ function PublicNav(){
             </div>
           ))}
           <div style={{padding:"16px 24px",display:"flex",flexDirection:"column",gap:10}}>
-            <button style={{...T.btnP,width:"100%"}} onClick={()=>window.location.href=`https://investor.${DOMAIN}`}>Investor Portal</button>
+            <button style={{...T.btnO,width:"100%"}} onClick={()=>setLang(l=>l==="en"?"fr":"en")}>
+              {lang==="en"?"Voir en Français 🇫🇷":"View in English 🇬🇧"}
+            </button>
+            <button style={{...T.btnP,width:"100%"}} onClick={()=>navigate("investor")}>Investor Portal</button>
           </div>
         </div>
       )}
@@ -659,18 +680,30 @@ function PublicNav(){
 //  PUBLIC FOOTER
 // ─────────────────────────────────────────────────────────────────────────────
 function PublicFooter(){
+  const [lang]=useLang();
+  const navLinks=lang==="en"
+    ?[["Company",["Overview","Our Story","The Team","Civic Priorities","Research"]],
+      ["Capital Solutions",["Private Equity","Private Credit","Commodities","Real Estate"]],
+      ["Legal",["Privacy","Terms","Notices","Disclosures"]]]
+    :[["Entreprise",["Overview","Our Story","The Team","Civic Priorities","Research"]],
+      ["Stratégies",["Private Equity","Private Credit","Commodities","Real Estate"]],
+      ["Légal",["Privacy","Terms","Notices","Disclosures"]]];
   return(
     <footer style={{background:"var(--head)",color:"rgba(255,255,255,0.65)"}}>
       <div className="px-page" style={{maxWidth:1300,margin:"0 auto",padding:"60px 40px 32px"}}>
         <div className="rg-ft" style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr",gap:48,marginBottom:48}}>
           <div>
-            <div style={{marginBottom:16}}><Logo size={18} dark/></div>
-            <p style={{fontSize:13,lineHeight:1.85,maxWidth:270}}>Flexible capital solutions across private equity, credit, real estate, and fixed income — delivered with precision and integrity.</p>
-            <div style={{marginTop:20,fontSize:10,letterSpacing:"0.1em",textTransform:"uppercase",color:"rgba(255,255,255,0.3)"}}>Registered Investment Adviser · SEC · FCA · MAS</div>
+            <div style={{marginBottom:16}}><Logo height={32} dark/></div>
+            <p style={{fontSize:13,lineHeight:1.85,maxWidth:270}}>
+              {lang==="en"
+                ?"Pan-African alternative investment management across Private Equity, Private Credit, Commodities, and Real Estate. CEMAC · West Africa · USA."
+                :"Gestion d'investissements alternatifs panafricaine en Private Equity, Crédit Privé, Matières Premières et Immobilier. CEMAC · Afrique de l'Ouest · USA."}
+            </p>
+            <div style={{marginTop:20,fontSize:10,letterSpacing:"0.1em",textTransform:"uppercase",color:"rgba(255,255,255,0.3)"}}>
+              {lang==="en"?"Alternative Investment Management · Pan-African Platform":"Gestion d'Investissements Alternatifs · Plateforme Panafricaine"}
+            </div>
           </div>
-          {[["Company",["Overview","Culture","Leadership","Civic Priorities","Careers"]],
-            ["Capital Solutions",["Private Equity","Private Credit","Real Estate","Fixed Income & FX"]],
-            ["Legal",["Privacy","Terms","Notices","Disclosures"]]].map(([h,items])=>(
+          {navLinks.map(([h,items])=>(
             <div key={h}>
               <div style={{fontSize:10,fontWeight:700,letterSpacing:"0.14em",textTransform:"uppercase",color:"var(--blue)",marginBottom:16}}>{h}</div>
               {items.map(i=>(
@@ -682,8 +715,8 @@ function PublicFooter(){
           ))}
         </div>
         <div style={{borderTop:"1px solid rgba(255,255,255,0.08)",paddingTop:24,display:"flex",justifyContent:"space-between",fontSize:12}}>
-          <span>© {new Date().getFullYear()} Prime Alpha Securities LLC. All rights reserved.</span>
-          <span>{DOMAIN} · New York · London · Singapore</span>
+          <span>© {new Date().getFullYear()} Prime Alpha Securities. {lang==="en"?"All rights reserved.":"Tous droits réservés."}</span>
+          <span>{DOMAIN} · CEMAC · West Africa · USA</span>
         </div>
       </div>
     </footer>
@@ -694,6 +727,7 @@ function PublicFooter(){
 //  PUBLIC HOME
 // ─────────────────────────────────────────────────────────────────────────────
 function PublicHome(){
+  const [lang]=useLang();
   return(
     <div>
 
@@ -710,7 +744,7 @@ function PublicHome(){
         <div style={{position:"absolute",top:0,left:0,width:4,bottom:0,background:"var(--blue)"}}/>
         <div style={{maxWidth:1100,margin:"0 auto",width:"100%",position:"relative",zIndex:1}}>
           <div className="fu" style={{maxWidth:680}}>
-            <SectionLabel>Alternative Asset Management</SectionLabel>
+            <SectionLabel>{lang==="en"?"Alternative Investment Management":"Gestion d'Investissements Alternatifs"}</SectionLabel>
             <h1 style={{
               fontFamily:"var(--ff-h)",
               fontSize:"clamp(48px,6.5vw,96px)",
@@ -718,18 +752,16 @@ function PublicHome(){
               color:"#fff",letterSpacing:"-1.5px",
               marginBottom:32,marginTop:8,
             }}>
-              FLEXIBLE<br/>
-              CAPITAL<br/>
-              <span style={{color:"var(--blue)"}}>SOLUTIONS.</span>
+              {lang==="en"?<>PAN-AFRICAN<br/>ALTERNATIVE<br/><span style={{color:"var(--blue)"}}>PLATFORM.</span></>:<>PLATEFORME<br/>D'INVESTISSEMENT<br/><span style={{color:"var(--blue)"}}>PANAFRICAINE.</span></>}
             </h1>
             <p style={{fontSize:17,color:"rgba(255,255,255,0.55)",maxWidth:520,lineHeight:1.85,marginBottom:40,fontWeight:300}}>
-              We deploy capital across private equity, private credit, real estate,
-              and fixed income — structuring bespoke solutions where conventional
-              finance falls short.
+              {lang==="en"
+                ?"We deploy capital across Private Equity, Private Credit, Commodities, and Real Estate — building the infrastructure Africa needs, one deal at a time."
+                :"Nous déployons des capitaux en Private Equity, Crédit Privé, Matières Premières et Immobilier — construisant les infrastructures dont l'Afrique a besoin, un deal à la fois."}
             </p>
             <div style={{display:"flex",gap:14,flexWrap:"wrap"}}>
-              <button style={T.btnP} onClick={()=>navigate("What We Do")}>Our Solutions</button>
-              <button style={{...T.btnO,borderColor:"rgba(255,255,255,0.3)",color:"#fff"}} onClick={()=>navigate("Contact")}>Get In Touch</button>
+              <button style={T.btnP} onClick={()=>navigate("What We Do")}>{lang==="en"?"Our Strategies":"Nos Stratégies"}</button>
+              <button style={{...T.btnO,borderColor:"rgba(255,255,255,0.3)",color:"#fff"}} onClick={()=>navigate("Contact")}>{lang==="en"?"Get In Touch":"Nous Contacter"}</button>
             </div>
           </div>
           <div className="fu fu-2" style={{
@@ -737,9 +769,12 @@ function PublicHome(){
             gap:0,marginTop:80,paddingTop:48,
             borderTop:"1px solid rgba(255,255,255,0.1)",
           }}>
-            {[["$4.2B+","Assets Under Management"],["18%","Avg. Net IRR"],["140+","Clients Served"],["23 yrs","Track Record"]].map(([v,l],i)=>(
+            {(lang==="en"
+              ?[["$1.92M","Assets Under Management"],["153.7%","Blended Return — All Capital"],["4","Active Strategies"],["June 2024","Founded"]]
+              :[["1,92 M$","Actifs sous Gestion"],["153,7%","Rendement Pondéré — Tout Capital"],["4","Stratégies Actives"],["Juin 2024","Fondé"]]
+            ).map(([v,l],i)=>(
               <div key={l} style={{padding:"0 32px 0 0",borderRight:i<3?"1px solid rgba(255,255,255,0.08)":"none"}}>
-                <div style={{fontFamily:"var(--ff-h)",fontSize:"clamp(28px,3vw,44px)",fontWeight:800,color:"#fff",letterSpacing:"-0.5px",lineHeight:1}}>{v}</div>
+                <div style={{fontFamily:"var(--ff-h)",fontSize:"clamp(22px,3vw,40px)",fontWeight:800,color:"#fff",letterSpacing:"-0.5px",lineHeight:1}}>{v}</div>
                 <div style={{fontSize:11,letterSpacing:"0.1em",textTransform:"uppercase",color:"rgba(255,255,255,0.4)",marginTop:8}}>{l}</div>
               </div>
             ))}
@@ -752,27 +787,35 @@ function PublicHome(){
         <div style={{maxWidth:1100,margin:"0 auto"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginBottom:56}}>
             <div>
-              <SectionLabel>Capital Solutions</SectionLabel>
-              <h2 style={{fontFamily:"var(--ff-h)",fontSize:"clamp(32px,4vw,52px)",fontWeight:800,color:"var(--head)",letterSpacing:"-0.5px"}}>WHAT WE DO</h2>
+              <SectionLabel>{lang==="en"?"Capital Solutions":"Stratégies d'Investissement"}</SectionLabel>
+              <h2 style={{fontFamily:"var(--ff-h)",fontSize:"clamp(32px,4vw,52px)",fontWeight:800,color:"var(--head)",letterSpacing:"-0.5px"}}>{lang==="en"?"WHAT WE DO":"CE QUE NOUS FAISONS"}</h2>
             </div>
-            <button style={T.btnG} onClick={()=>navigate("What We Do")}>View all →</button>
+            <button style={T.btnG} onClick={()=>navigate("What We Do")}>{lang==="en"?"View all →":"Tout voir →"}</button>
           </div>
           <div className="rg-4" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:1,background:"var(--lg)"}}>
-            {[
-              {name:"Private Equity",  icon:"◆",desc:"Control and minority investments in businesses with durable competitive advantages.",p:"Private Equity"},
-              {name:"Private Credit",  icon:"◈",desc:"Direct lending and structured credit solutions from $2M to $100M+.",p:"Private Credit"},
-              {name:"Real Estate",     icon:"◇",desc:"Value-add and core-plus strategies across logistics, multifamily, and commercial.",p:"Real Estate"},
-              {name:"Fixed Income & FX",icon:"◉",desc:"Discretionary macro and systematic overlays for institutional portfolios.",p:"Fixed Income & FX"},
-            ].map((s,i)=>(
-              <div key={s.name} className={`fu fu-${i+1}`}
+            {(lang==="en"
+              ?[
+                {code:"PE",name:"Private Equity",desc:"Controlling and meaningful stakes in African businesses — retail, consumer staples, high-growth sectors. 3–7 year hold.",p:"Private Equity"},
+                {code:"PC",name:"Private Credit",desc:"Structured direct lending to mid-market businesses underserved by traditional banks. West Africa & Asia. Zero drawdowns to date.",p:"Private Credit"},
+                {code:"COM",name:"Commodities",desc:"Physical commodity trading across textiles, luxury goods, agriculture, and livestock. Regional sourcing networks across CEMAC.",p:"Commodities"},
+                {code:"RE",name:"Real Estate",desc:"U.S.-based strategy targeting residential and multifamily assets. Fix-and-flip, buy-and-hold, and distressed situations. Currently fundraising.",p:"Real Estate"},
+              ]
+              :[
+                {code:"PE",name:"Private Equity",desc:"Participations majoritaires dans des entreprises africaines — distribution, conso. de base, secteurs à forte croissance. 3–7 ans.",p:"Private Equity"},
+                {code:"PC",name:"Crédit Privé",desc:"Prêts structurés aux PME non servies par les banques traditionnelles. Afrique de l'Ouest & Asie. Zéro défaut à ce jour.",p:"Private Credit"},
+                {code:"MAT",name:"Matières Premières",desc:"Commerce de matières premières physiques — textile, luxe, agriculture et bétail. Réseaux d'approvisionnement en CEMAC.",p:"Commodities"},
+                {code:"IMM",name:"Immobilier",desc:"Stratégie basée aux États-Unis — résidentiel et multifamilial. Réhabilitation-revente, buy-and-hold, situations spéciales. En levée.",p:"Real Estate"},
+              ]
+            ).map((s,i)=>(
+              <div key={s.code} className={`fu fu-${i+1}`}
                 style={{background:"var(--w)",padding:32,cursor:"pointer",transition:"background 0.15s"}}
                 onMouseEnter={e=>e.currentTarget.style.background="var(--ow)"}
                 onMouseLeave={e=>e.currentTarget.style.background="var(--w)"}
                 onClick={()=>navigate(s.p)}>
-                <div style={{fontSize:20,color:"var(--blue)",marginBottom:20}}>{s.icon}</div>
+                <div style={{fontSize:11,fontWeight:700,letterSpacing:"0.12em",color:"var(--blue)",marginBottom:14,textTransform:"uppercase"}}>{s.code}</div>
                 <h3 style={{fontFamily:"var(--ff-h)",fontSize:20,fontWeight:700,color:"var(--head)",marginBottom:12}}>{s.name}</h3>
                 <p style={{fontSize:13,color:"var(--dim)",lineHeight:1.8,marginBottom:20}}>{s.desc}</p>
-                <div style={{fontSize:12,color:"var(--blue)",fontWeight:700,letterSpacing:"0.05em"}}>EXPLORE →</div>
+                <div style={{fontSize:12,color:"var(--blue)",fontWeight:700,letterSpacing:"0.05em"}}>{lang==="en"?"EXPLORE →":"EXPLORER →"}</div>
               </div>
             ))}
           </div>
@@ -783,21 +826,31 @@ function PublicHome(){
       <section style={{background:"var(--head)",padding:"80px max(24px,6vw)"}}>
         <div style={{maxWidth:1100,margin:"0 auto",display:"grid",gridTemplateColumns:"1fr 1fr",gap:80,alignItems:"center"}} className="hero-grid">
           <div>
-            <SectionLabel>About the Firm</SectionLabel>
+            <SectionLabel>{lang==="en"?"Our Story":"Notre Histoire"}</SectionLabel>
             <h2 style={{fontFamily:"var(--ff-h)",fontSize:"clamp(28px,3.5vw,48px)",fontWeight:800,color:"#fff",letterSpacing:"-0.5px",marginBottom:20}}>
-              PRECISION CAPITAL<br/>SINCE 2001
+              {lang==="en"?"FROM DORM ROOMS\nTO A PAN-AFRICAN\nPLATFORM.":"DES SALLES DE COURS\nÀ UNE PLATEFORME\nPANAFRICAINE."}
             </h2>
-            <p style={{color:"rgba(255,255,255,0.55)",fontSize:15,lineHeight:1.9,marginBottom:28}}>
-              Prime Alpha Securities is a global alternative asset manager with offices in
-              New York, London, and Singapore. We deploy capital with conviction and structure
-              solutions where conventional managers cannot.
+            <p style={{color:"rgba(255,255,255,0.55)",fontSize:15,lineHeight:1.9,marginBottom:24}}>
+              {lang==="en"
+                ?"A group of students — engineers, a roboticist, and one very persistent finance guy — started lending money to friends in June 2024. What began as $56,719 in seed capital has grown to $1.92M in AUM across four strategies."
+                :"Un groupe d'étudiants — ingénieurs, roboticien et un homme de finance très tenace — ont commencé à prêter de l'argent à leurs amis en juin 2024. Ce qui a commencé avec 56 719 $ est devenu 1,92 M$ d'AUM sur quatre stratégies."}
             </p>
-            <button style={{...T.btnO,borderColor:"rgba(255,255,255,0.3)",color:"#fff"}} onClick={()=>navigate("Overview")}>Who We Are →</button>
+            <blockquote style={{borderLeft:"3px solid var(--blue)",paddingLeft:16,marginBottom:28}}>
+              <p style={{color:"rgba(255,255,255,0.65)",fontSize:13,fontStyle:"italic",lineHeight:1.7}}>
+                {lang==="en"
+                  ?"\"Everyone is running to where the system is already working. We want to build the system.\" — Noe Ikoué, CIO"
+                  :"« Tout le monde court là où le système fonctionne déjà. Nous, nous voulons construire le système. » — Noe Ikoué, DII"}
+              </p>
+            </blockquote>
+            <button style={{...T.btnO,borderColor:"rgba(255,255,255,0.3)",color:"#fff"}} onClick={()=>navigate("Overview")}>{lang==="en"?"Who We Are →":"Qui Sommes-Nous →"}</button>
           </div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:1,background:"rgba(255,255,255,0.06)"}}>
-            {[["SEC","Registered Investment Adviser"],["FCA","Financial Conduct Authority"],["MAS","Monetary Authority of Singapore"],["ILPA","Member — LP Association"]].map(([k,v])=>(
+            {(lang==="en"
+              ?[["$56K → $1.92M","Total capital growth since June 2024"],["153.7%","Blended return — all capital deployed"],["+195%","Return in first 11 months (no outside capital)"],["$20M","Conservative AUM target by 2030"]]
+              :[["56 K$ → 1,92 M$","Croissance totale depuis juin 2024"],["153,7%","Rendement pondéré — tout capital déployé"],["+195%","Rendement dans les 11 premiers mois"],["20 M$","Objectif AUM conservateur d'ici 2030"]]
+            ).map(([k,v])=>(
               <div key={k} style={{background:"rgba(255,255,255,0.03)",padding:"24px 20px"}}>
-                <div style={{fontFamily:"var(--ff-h)",fontSize:22,fontWeight:800,color:"var(--blue)",marginBottom:6}}>{k}</div>
+                <div style={{fontFamily:"var(--ff-h)",fontSize:18,fontWeight:800,color:"var(--blue)",marginBottom:6,lineHeight:1.1}}>{k}</div>
                 <div style={{fontSize:11,color:"rgba(255,255,255,0.4)",lineHeight:1.6}}>{v}</div>
               </div>
             ))}
@@ -810,10 +863,10 @@ function PublicHome(){
         <div style={{maxWidth:1100,margin:"0 auto"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginBottom:48}}>
             <div>
-              <SectionLabel>Latest Thinking</SectionLabel>
-              <h2 style={{fontFamily:"var(--ff-h)",fontSize:"clamp(32px,4vw,52px)",fontWeight:800,color:"var(--head)",letterSpacing:"-0.5px"}}>RESEARCH & INSIGHTS</h2>
+              <SectionLabel>{lang==="en"?"Latest Thinking":"Réflexions Récentes"}</SectionLabel>
+              <h2 style={{fontFamily:"var(--ff-h)",fontSize:"clamp(32px,4vw,52px)",fontWeight:800,color:"var(--head)",letterSpacing:"-0.5px"}}>{lang==="en"?"RESEARCH & INSIGHTS":"RECHERCHE & ANALYSES"}</h2>
             </div>
-            <button style={T.btnG} onClick={()=>navigate("Research")}>All articles →</button>
+            <button style={T.btnG} onClick={()=>navigate("Research")}>{lang==="en"?"All articles →":"Tous les articles →"}</button>
           </div>
           <div className="rg-2" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
             {SEED["articles"].slice(0,2).map((a,i)=>(
@@ -838,12 +891,12 @@ function PublicHome(){
       <section style={{background:"var(--blue)",padding:"80px max(24px,6vw)"}}>
         <div style={{maxWidth:1100,margin:"0 auto",display:"flex",justifyContent:"space-between",alignItems:"center",gap:40,flexWrap:"wrap"}}>
           <div>
-            <div style={{fontSize:10,fontWeight:700,letterSpacing:"0.18em",textTransform:"uppercase",color:"rgba(255,255,255,0.6)",marginBottom:10}}>Speak With Us</div>
-            <h2 style={{fontFamily:"var(--ff-h)",fontSize:"clamp(28px,4vw,48px)",fontWeight:800,color:"#fff",letterSpacing:"-0.5px"}}>READY TO INVEST?</h2>
+            <div style={{fontSize:10,fontWeight:700,letterSpacing:"0.18em",textTransform:"uppercase",color:"rgba(255,255,255,0.6)",marginBottom:10}}>{lang==="en"?"Speak With Us":"Parlez-Nous"}</div>
+            <h2 style={{fontFamily:"var(--ff-h)",fontSize:"clamp(28px,4vw,48px)",fontWeight:800,color:"#fff",letterSpacing:"-0.5px"}}>{lang==="en"?"READY TO INVEST?":"PRÊT À INVESTIR ?"}</h2>
           </div>
           <div style={{display:"flex",gap:14,flexWrap:"wrap"}}>
-            <button style={{...T.btnP,background:"#fff",color:"var(--blue)"}} onClick={()=>navigate("Contact")}>Get In Touch</button>
-            <button style={{...T.btnO,borderColor:"rgba(255,255,255,0.4)",color:"#fff"}} onClick={()=>window.location.href=`https://investor.${DOMAIN}`}>Investor Portal</button>
+            <button style={{...T.btnP,background:"#fff",color:"var(--blue)"}} onClick={()=>navigate("Contact")}>{lang==="en"?"Get In Touch":"Nous Contacter"}</button>
+            <button style={{...T.btnO,borderColor:"rgba(255,255,255,0.4)",color:"#fff"}} onClick={()=>navigate("investor")}>{lang==="en"?"Investor Portal":"Espace Investisseur"}</button>
           </div>
         </div>
       </section>
@@ -856,19 +909,107 @@ function PublicHome(){
 //  WHO WE ARE
 // ─────────────────────────────────────────────────────────────────────────────
 function WhoWeAre({sub}){
+  const [lang]=useLang();
   const C={
-    Overview:{h:"Who We Are",body:"Founded in 2024, Prime Alpha Securities is a global alternative asset manager specialising in flexible capital solutions. With offices in New York, London, and Singapore, we deploy over $4.2 billion across four core strategies — providing capital where conventional finance is too rigid, too slow, or too constrained.",stats:[["2024","Founded","New York, NY"],["$1M+","AUM","Across 4 strategies"],["15+","Clients","Individuals & family offices"],["5","Countries","Global reach"]]},
-    Culture:{h:"Our Culture",body:"At Prime Alpha Securities, culture is built through the accumulation of high-conviction decisions made under pressure. We believe intellectual honesty, structural flexibility, and operational precision are not competing values — they are the same value, expressed differently.",pillars:[["Intellectual Rigor","We challenge every assumption and subject each thesis to rigorous stress-testing before capital is deployed."],["Flexibility as Philosophy","We were built to structure solutions where others can't. Adaptability is our core competency."],["Integrity Above Returns","We decline mandates that conflict with our values, even when the financial case is compelling."],["Collaborative Excellence","Exceptional people, working in systems that amplify rather than constrain."]]},
-    Leadership:{h:"Leadership",people:[{n:"Noe Desire Ikoue",t:"Chief Investment Officer",b:"30 years in alternative asset management. Former MD at Goldman Sachs Private Equity. MBA Harvard, JD Columbia."},{n:"Ibrahima Balde",t:"Chief Operation Officer",b:"Pioneer in systematic credit analysis. Built Prime Alpha's private credit platform from inception. MSc Mathematical Finance, Oxford."},{n:"Johan A Botouli",t:"Chief Risk Officer",b:"Quantitative risk architect with deep expertise in cross-asset portfolio construction. PhD Statistics, MIT."},{n:"Marcus Webb",t:"Head of Private Equity",b:"20+ years sourcing and executing control buyouts across healthcare, technology, and industrials. MBA Wharton."}]},
-    "Civic Priorities":{h:"Civic Priorities & Aim",body:"Prime Alpha Securities believes that flexible capital carries civic responsibility. Our priorities reflect a conviction that markets function best when they serve broader society.",civics:[["Financial Literacy Initiative","Annual $2M commitment to financial education programs in underserved communities across our operating markets."],["Climate Transition Capital","25% of new PE deployments screened against net-zero frameworks; dedicated renewables allocation in real assets."],["Diverse Manager Program","Seeding and mentoring emerging managers led by women and underrepresented minorities via our $150M DMP fund-of-funds."],["Governance Excellence","Active stewardship across portfolio companies; voting records published annually; board diversity targets embedded in investment criteria."]]},
+    Overview:{
+      en:{h:"Who We Are",body:"Prime Alpha Securities is a Pan-African alternative investment management firm founded in June 2024 by three co-founders — an economist, a commodity engineer, and a technologist. We deploy flexible capital across Private Equity, Private Credit, Commodities, and Real Estate — primarily across CEMAC and West African markets, with an expanding U.S. Real Estate platform. We exist to correct a specific capital market failure: the Missing Middle of African business — companies too large for microfinance and too informal for institutional PE.",
+        stats:[["June 2024","Founded","CEMAC / West Africa"],["$1.92M","AUM — Dec. 2026","Across 4 strategies"],["153.7%","Blended Return","All capital ever deployed"],["$20M","2030 Target","Conservative AUM target"]]},
+      fr:{h:"Qui Sommes-Nous",body:"Prime Alpha Securities est une firme panafricaine de gestion d'investissements alternatifs fondée en juin 2024 par trois co-fondateurs. Nous déployons des capitaux flexibles en Private Equity, Crédit Privé, Matières Premières et Immobilier — principalement sur les marchés CEMAC et Afrique de l'Ouest, avec une plateforme Immobilier en expansion aux États-Unis.",
+        stats:[["Juin 2024","Fondé","CEMAC / Afrique de l'Ouest"],["1,92 M$","AUM — Déc. 2026","Sur 4 stratégies"],["153,7%","Rendement Pondéré","Tout capital déployé"],["20 M$","Objectif 2030","Scénario conservateur"]]},
+    },
+    Culture:{
+      en:{h:"Our Culture",body:"Culture is not what you say you believe. It is what you do when you are under pressure, short on time, and the right answer is inconvenient. These are the non-negotiables that define how we operate — built before pressure tested them.",
+        pillars:[
+          ["Eat What You Kill","Every deal team is directly accountable for the returns they generate. No hiding behind aggregated fund performance. We hunt together, but individual accountability is absolute."],
+          ["Zero Tolerance for Bribery","Any engagement in bribery of public officials — by any team member or portfolio company — results in immediate divestment and disclosure to LPs. No exceptions for 'how business is done here.'"],
+          ["Fiduciary Primacy","LP interests are never subordinated to personal founder interests. All conflicts of interest are disclosed within 24 hours of identification. This is not a guideline — it is a non-negotiable."],
+          ["First-Mover Mindset","We are not replicating Wall Street in Africa. We are building something only Africa could create — with its own rhythm, ambition, and rules. The CEMAC region's structural constraints are our competitive moat, not a limitation."],
+          ["Legal Compliance — Always","We do not make investments in markets where operating legally is structurally impossible, regardless of return opportunity. Tone at the top is a behavioral pattern, not a communication strategy."],
+          ["Disagreement on the Record","When founders disagree on an investment or strategic decision and one is overruled, the dissenting position is recorded in investment committee minutes. We prevent revisionism by documenting it."],
+        ]},
+      fr:{h:"Notre Culture",body:"La culture n'est pas ce que vous dites croire. C'est ce que vous faites sous pression, en manque de temps, quand la bonne réponse est inconfortable. Ce sont les non-négociables qui définissent notre façon d'opérer.",
+        pillars:[
+          ["On Mange Ce Qu'on Chasse","Chaque équipe de deal est directement responsable des rendements qu'elle génère. Pas de refuge derrière une performance agrégée. Nous chassons ensemble, mais la responsabilité individuelle est absolue."],
+          ["Tolérance Zéro pour la Corruption","Tout engagement dans la corruption de fonctionnaires — par tout membre de l'équipe ou société du portefeuille — entraîne une désinvestissement immédiat et une divulgation aux LPs. Aucune exception."],
+          ["Primauté Fiduciaire","Les intérêts des LPs ne sont jamais subordonnés aux intérêts personnels des fondateurs. Tous les conflits d'intérêts sont divulgués dans les 24 heures suivant leur identification."],
+          ["Esprit Pionnier","Nous ne répliquons pas Wall Street en Afrique. Nous construisons quelque chose que seule l'Afrique pouvait créer — avec son rythme, ses ambitions, ses règles."],
+          ["Conformité Légale — Toujours","Nous n'investissons pas dans des marchés où opérer légalement est structurellement impossible, quelle que soit l'opportunité de rendement."],
+          ["Désaccord Consigné","Quand les fondateurs ne sont pas d'accord sur une décision, la position dissidente est enregistrée dans les procès-verbaux du comité d'investissement."],
+        ]},
+    },
+    "Our Story":{
+      en:{eyebrow:"Genesis",h:"OUR STORY",body:"The unlikely origin story nobody saw coming — except us.",
+        timeline:[
+          ["June 2024","The Spark","A group of college students — engineers, a roboticist, and one very persistent finance guy — started lending money to friends. Informally. Profitably. Repeatedly. What began as peer-to-peer credit became the kernel of an institutional investment firm."],
+          ["Q3 2024","The Realization","Noe Ikoué looked at the group's chaotic deals and said: 'We're already running a fund. Let's make it official.' The informal activity had a track record. It just needed a structure — and the discipline to turn it into something institutional."],
+          ["Q4 2024","The Pivot","They explored a hedge fund model — until they looked carefully at CEMAC markets. Illiquid. Limited derivatives. No short-selling infrastructure. The data said change. They pivoted to Private Equity and built a flexible capital thesis around the specific failures of the markets they knew."],
+          ["2025","Formalization","The multi-strategy framework took shape. Original capital of $56,719 grew to $167,388 — a +195% return in 11 months with zero outside capital. A verifiable track record was underway. The firm's DNA was written."],
+          ["2026","The Platform","A $700K capital raise grew to $1.285M. The original capital base continued compounding to $634,800. After partial profit distributions, total AUM reached $1.92M across four active strategies. Real Estate fundraising launched in the U.S."],
+        ],
+        quote:"\"Everyone is running to where the system is already working. We want to build the system.\" — Noe Ikoué, CIO"},
+      fr:{eyebrow:"Genèse",h:"NOTRE HISTOIRE",body:"L'histoire improbable que personne n'avait vue venir — sauf nous.",
+        timeline:[
+          ["Juin 2024","L'Étincelle","Un groupe d'étudiants — ingénieurs, roboticien et un homme de finance très tenace — ont commencé à prêter de l'argent à leurs amis. Informellement. Avec profit. Régulièrement."],
+          ["T3 2024","La Prise de Conscience","Noe Ikoué regarda les transactions chaotiques du groupe et dit : « On gère déjà un fonds. Formalisons la chose. » L'activité informelle avait un historique. Il lui fallait juste une structure."],
+          ["T4 2024","Le Pivot","Ils envisagèrent un hedge fund — jusqu'à l'analyse approfondie des marchés CEMAC. Illiquides. Peu de dérivés. Short selling quasi inexistant. Les données imposaient un changement. Pivot vers le Private Equity."],
+          ["2025","Formalisation","Le cadre multi-stratégies a pris forme. Le capital initial de 56 719 $ a crû jusqu'à 167 388 $ — un rendement de +195% en 11 mois sans capital extérieur."],
+          ["2026","La Plateforme","Une levée de 700 K$ est passée à 1 285 200 $. L'AUM total a atteint 1,92 M$ sur quatre stratégies actives. Lancement de la levée Immobilier aux États-Unis."],
+        ],
+        quote:"« Tout le monde court là où le système fonctionne déjà. Nous, nous voulons construire le système. » — Noe Ikoué, DII"},
+    },
+    "The Team":{
+      en:{h:"The Team",
+        people:[
+          {n:"Noe Désiré Ikoué",t:"Co-Founder & CIO",b:"The architect behind Prime Alpha's multi-strategy framework. With a background in economics, finance, and derivatives, Noe leads cross-strategy risk coordination and portfolio design. He formalized the firm's lending operations and built the pivot to the private equity model — from scratch, while still a student.",creds:"BBA Finance · M.Sc. Financial Mathematics"},
+          {n:"Balde Ibrahima",t:"Co-Founder & COO",b:"Leads Prime Commodities Capital with operational depth no spreadsheet can replicate. A Quality Engineer at Michelin, Ibrahima manages physical commodity trading across livestock, textiles, and agriculture — building local sourcing networks across the CEMAC and West African corridor.",creds:"B.Sc. Chemical Engineering · Agribusiness & Trade Flow Specialist"},
+          {n:"Johan A. Botouli",t:"Co-Founder & CTO",b:"Leads all technology infrastructure across the firm and its portfolio holdings. Johan builds the systems that support Prime Alpha's scalability — data pipelines, cloud architecture, and tech-enabled value creation. His robotics and AI background brings systems thinking to investment operations.",creds:"B.Eng. Robotics & AI · AWS-Certified Cloud Engineer, Python Specialist"},
+        ]},
+      fr:{h:"L'Équipe",
+        people:[
+          {n:"Noe Désiré Ikoué",t:"Co-Fondateur & DII",b:"L'architecte du cadre multi-stratégies de Prime Alpha. Avec une formation en économie, finance et dérivés, Noe dirige la coordination des risques inter-stratégies et la conception du portefeuille. Il a formalisé les opérations de prêt de la firme et structuré le pivot vers le private equity — encore étudiant.",creds:"BBA Finance · M.Sc. Mathématiques Financières"},
+          {n:"Balde Ibrahima",t:"Co-Fondateur & DGO",b:"Dirige Prime Commodities Capital avec une profondeur opérationnelle qu'aucun tableur ne peut reproduire. Ingénieur qualité chez Michelin, Ibrahima gère le négoce de matières premières physiques — bétail, textile, agriculture — en construisant des réseaux d'approvisionnement locaux dans le corridor CEMAC et Afrique de l'Ouest.",creds:"B.Sc. Génie Chimique · Spécialiste Agrobusiness & Flux Commerciaux"},
+          {n:"Johan A. Botouli",t:"Co-Fondateur & DTC",b:"Dirige toute l'infrastructure technologique de la firme et de ses participations. Johan construit les systèmes qui soutiennent la scalabilité de Prime Alpha — pipelines de données, architecture cloud, création de valeur technologique.",creds:"B.Eng. Robotique & IA · Ingénieur Cloud AWS Certifié, Spécialiste Python"},
+        ]},
+    },
+    Leadership:{
+      en:{h:"The Team",
+        people:[
+          {n:"Noe Désiré Ikoué",t:"Co-Founder & CIO",b:"The architect behind Prime Alpha's multi-strategy framework. With a background in economics, finance, and derivatives, Noe leads cross-strategy risk coordination and portfolio design. He formalized the firm's lending operations and built the pivot to the private equity model — from scratch, while still a student.",creds:"BBA Finance · M.Sc. Financial Mathematics"},
+          {n:"Balde Ibrahima",t:"Co-Founder & COO",b:"Leads Prime Commodities Capital with operational depth no spreadsheet can replicate. A Quality Engineer at Michelin, Ibrahima manages physical commodity trading across livestock, textiles, and agriculture.",creds:"B.Sc. Chemical Engineering · Agribusiness & Trade Flow Specialist"},
+          {n:"Johan A. Botouli",t:"Co-Founder & CTO",b:"Leads all technology infrastructure across the firm and its portfolio holdings.",creds:"B.Eng. Robotics & AI · AWS-Certified Cloud Engineer, Python Specialist"},
+        ]},
+      fr:{h:"L'Équipe",
+        people:[
+          {n:"Noe Désiré Ikoué",t:"Co-Fondateur & DII",b:"L'architecte du cadre multi-stratégies de Prime Alpha. Avec une formation en économie, finance et dérivés, Noe dirige la coordination des risques inter-stratégies et la conception du portefeuille. Il a formalisé les opérations de prêt de la firme et structuré le pivot vers le private equity — encore étudiant.",creds:"BBA Finance · M.Sc. Mathématiques Financières"},
+          {n:"Balde Ibrahima",t:"Co-Fondateur & DGO",b:"Dirige Prime Commodities Capital avec une profondeur opérationnelle qu'aucun tableur ne peut reproduire. Ingénieur qualité chez Michelin, Ibrahima gère le négoce de matières premières physiques — bétail, textile, agriculture — en construisant des réseaux d'approvisionnement locaux dans le corridor CEMAC et Afrique de l'Ouest.",creds:"B.Sc. Génie Chimique · Spécialiste Agrobusiness & Flux Commerciaux"},
+          {n:"Johan A. Botouli",t:"Co-Fondateur & DTC",b:"Dirige toute l'infrastructure technologique de la firme et de ses participations. Johan construit les systèmes qui soutiennent la scalabilité de Prime Alpha — pipelines de données, architecture cloud, création de valeur technologique. Son background en robotique et IA apporte une pensée systémique.",creds:"B.Eng. Robotique & IA · Ingénieur Cloud AWS Certifié, Spécialiste Python"},
+        ]},
+    },
+    "Civic Priorities":{
+      en:{h:"Civic Priorities",body:"We believe flexible capital carries civic responsibility. The capital market failure we exist to correct is not a generic 'Africa needs capital' story — it is a specific diagnosis of where the system fails and why. Our priorities are built from that diagnosis.",
+        civics:[
+          ["The Missing Middle","Companies generating $500K–$10M in annual revenue, employing 20–200 people, and requiring growth capital of $500K–$15M have no institutional home. Too large for microfinance, too informal for institutional PE. We exist for this cohort."],
+          ["Why Banks Fail SMEs","Commercial banks in Senegal and Cameroon are rationally responding to their own incentive structures — collateral-based underwriting, short-tenor deposits, and KYC calibrated for formal companies with audited financials. Most growth companies do not fit. We do not need banks to change. We fill the gap they leave."],
+          ["Financial Inclusion","57% of Africa's population is unbanked. Private credit fills a structural financing vacuum. Access to patient growth capital is not a luxury — it is the difference between a business that scales and one that stagnates."],
+          ["Local Presence, International Standards","Local presence means physical presence in market, local staff with operational networks, and deal origination from relationships. International standards means IFRS accounting, Big-4-ready audit processes, and governance structures that institutional LPs can diligence without friction. We commit to both."],
+        ]},
+      fr:{h:"Priorités Civiques",body:"Nous croyons que le capital flexible porte une responsabilité civique. La défaillance du marché des capitaux que nous existons pour corriger n'est pas une histoire générique — c'est un diagnostic précis de l'endroit où le système échoue et pourquoi.",
+        civics:[
+          ["Le Maillon Manquant","Les entreprises générant 500 K$–10 M$ de chiffre d'affaires annuel, employant 20 à 200 personnes, et nécessitant des capitaux de croissance de 500 K$ à 15 M$ n'ont pas de foyer institutionnel. Trop grandes pour la microfinance, trop informelles pour le PE institutionnel."],
+          ["Pourquoi les Banques Échouent","Les banques commerciales au Sénégal et au Cameroun répondent rationnellement à leurs propres structures d'incitation — souscription basée sur les garanties, dépôts à court terme, KYC calibré pour les entreprises formelles. La plupart des entreprises à forte croissance ne correspondent pas."],
+          ["Inclusion Financière","57% de la population africaine est non bancarisée. Le crédit privé comble un vide structurel de financement. L'accès au capital patient n'est pas un luxe — c'est la différence entre une entreprise qui grandit et une qui stagne."],
+          ["Présence Locale, Standards Internationaux","Présence locale signifie présence physique sur le marché, personnel local avec des réseaux opérationnels. Standards internationaux signifie comptabilité IFRS et structures de gouvernance que les LPs institutionnels peuvent auditer sans friction."],
+        ]},
+    },
   };
   const c=C[sub]||C.Overview;
+  const d=c[lang]||c.en;
   return(
     <div>
-      <PageHero eyebrow="Who We Are" title={c.h.toUpperCase()} body={c.body}/>
+      <PageHero eyebrow={lang==="en"?"Who We Are":"Qui Sommes-Nous"} title={d.h.toUpperCase()} body={d.body}/>
       <div style={{maxWidth:960,margin:"0 auto",padding:"64px max(16px,4vw)"}}>
-        {c.stats&&<div className="rg-4" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:20}}>
-          {c.stats.map(([v,l,s])=>(
+        {d.stats&&<div className="rg-4" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:20}}>
+          {d.stats.map(([v,l,s])=>(
             <div key={l} style={{...T.card,borderTop:"3px solid var(--blue)"}}>
               <div style={{fontFamily:"var(--ff-h)",fontSize:38,fontWeight:800,color:"var(--blue)"}}>{v}</div>
               <div style={{fontWeight:700,color:"var(--head)",marginTop:4}}>{l}</div>
@@ -876,30 +1017,48 @@ function WhoWeAre({sub}){
             </div>
           ))}
         </div>}
-        {c.pillars&&c.pillars.map(([t,d])=>(
+        {d.pillars&&d.pillars.map(([t,desc])=>(
           <div key={t} style={{...T.card,marginBottom:14,borderLeft:"3px solid var(--blue)"}}>
             <h3 style={{...T.hdg,fontSize:18,marginBottom:8}}>{t}</h3>
-            <p style={{color:"var(--dim)",lineHeight:1.85}}>{d}</p>
+            <p style={{color:"var(--dim)",lineHeight:1.85}}>{desc}</p>
           </div>
         ))}
-        {c.people&&<div className="rg-2" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
-          {c.people.map(p=>(
+        {d.people&&<div className="rg-2" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
+          {d.people.map(p=>(
             <div key={p.n} style={T.card}>
               <div style={{width:50,height:50,background:"var(--blue)",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontFamily:"var(--ff-h)",fontSize:18,fontWeight:800,marginBottom:14}}>
                 {p.n.split(" ").map(x=>x[0]).join("")}
               </div>
               <h3 style={{...T.hdg,fontSize:17}}>{p.n}</h3>
               <div style={{fontSize:10,fontWeight:700,letterSpacing:"0.09em",textTransform:"uppercase",color:"var(--blue)",marginBottom:10}}>{p.t}</div>
-              <p style={{fontSize:13,color:"var(--dim)",lineHeight:1.75}}>{p.b}</p>
+              <p style={{fontSize:13,color:"var(--dim)",lineHeight:1.75,marginBottom:10}}>{p.b}</p>
+              <div style={{fontSize:11,color:"var(--dim)",borderTop:"1px solid var(--lg)",paddingTop:10}}>{p.creds}</div>
             </div>
           ))}
         </div>}
-        {c.civics&&c.civics.map(([t,d])=>(
-          <div key={t} style={{...T.card,marginBottom:14,display:"flex",gap:18,alignItems:"flex-start"}}>
+        {d.timeline&&<div style={{marginTop:8}}>
+          {d.timeline.map(([date,title,body],i)=>(
+            <div key={date} style={{display:"grid",gridTemplateColumns:"100px 1fr",gap:20,paddingBottom:32,position:"relative"}}>
+              {i<d.timeline.length-1&&<div style={{position:"absolute",left:44,top:28,bottom:0,width:1,background:"var(--lg)"}}/>}
+              <div style={{paddingTop:2}}>
+                <div style={{width:10,height:10,background:"var(--blue)",borderRadius:"50%",marginBottom:6,marginLeft:40}}/>
+                <div style={{fontSize:10,fontWeight:700,color:"var(--blue)",letterSpacing:"0.07em",lineHeight:1.4}}>{date}</div>
+              </div>
+              <div style={{...T.card}}>
+                <h3 style={{fontFamily:"var(--ff-h)",fontSize:19,fontWeight:700,color:"var(--head)",marginBottom:8}}>{title}</h3>
+                <p style={{fontSize:14,color:"var(--dim)",lineHeight:1.8}}>{body}</p>
+              </div>
+            </div>
+          ))}
+          {d.quote&&<blockquote style={{borderLeft:"3px solid var(--blue)",paddingLeft:20,marginTop:8}}>
+            <p style={{color:"var(--body)",fontSize:15,fontStyle:"italic",lineHeight:1.7}}>{d.quote}</p>
+          </blockquote>}
+        </div>}
+          <div key={title} style={{...T.card,marginBottom:14,display:"flex",gap:18,alignItems:"flex-start"}}>
             <div style={{width:38,height:38,background:"var(--blue)",borderRadius:"var(--r)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:16,flexShrink:0}}>◆</div>
             <div>
-              <h3 style={{...T.hdg,fontSize:17,marginBottom:6}}>{t}</h3>
-              <p style={{color:"var(--dim)",lineHeight:1.85}}>{d}</p>
+              <h3 style={{...T.hdg,fontSize:17,marginBottom:6}}>{title}</h3>
+              <p style={{color:"var(--dim)",lineHeight:1.85}}>{desc}</p>
             </div>
           </div>
         ))}
@@ -912,18 +1071,19 @@ function WhoWeAre({sub}){
 //  WHAT WE DO
 // ─────────────────────────────────────────────────────────────────────────────
 function WhatWeDo({sub}){
+  const [lang]=useLang();
   if(sub==="Private Credit")return <PrivateCreditPublic/>;
   if(sub==="Overview")return(
     <div>
-      <PageHero eyebrow="Capital Solutions" title="WHAT WE DO" body="Prime Alpha Securities operates four integrated capital platforms, each with dedicated teams, proprietary deal flow, and flexible mandate structures built to serve clients that conventional managers cannot."/>
+      <PageHero eyebrow={lang==="en"?"Capital Solutions":"Stratégies d'Investissement"} title={lang==="en"?"WHAT WE DO":"CE QUE NOUS FAISONS"} body={lang==="en"?"Prime Alpha Securities operates four integrated capital platforms, each with dedicated teams and independent mandates — coordinated at the portfolio level.":"Prime Alpha Securities opère quatre plateformes de capital intégrées, chacune avec des équipes dédiées et des mandats indépendants — coordonnés au niveau du portefeuille global."}/>
       <div style={{maxWidth:960,margin:"0 auto",padding:"64px max(16px,4vw)"}}>
         <div className="rg-2" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:18}}>
-          {["Private Equity","Private Credit","Real Estate","Fixed Income & FX"].map(s=>(
+          {["Private Equity","Private Credit","Commodities","Real Estate"].map(s=>(
             <button key={s} onClick={()=>navigate(s)} style={{...T.card,textAlign:"left",cursor:"pointer",borderLeft:"3px solid var(--blue)",transition:"box-shadow 0.15s"}}
               onMouseEnter={e=>e.currentTarget.style.boxShadow="var(--sh-md)"}
               onMouseLeave={e=>e.currentTarget.style.boxShadow="var(--sh)"}>
               <h3 style={{...T.hdg,fontSize:20,marginBottom:6}}>{s}</h3>
-              <div style={{color:"var(--blue)",fontSize:13,fontWeight:700}}>Explore →</div>
+              <div style={{color:"var(--blue)",fontSize:13,fontWeight:700}}>{lang==="en"?"Explore →":"Explorer →"}</div>
             </button>
           ))}
         </div>
@@ -931,16 +1091,32 @@ function WhatWeDo({sub}){
     </div>
   );
   const strats={
-    "Private Equity":{body:"We pursue control and significant minority investments in market-leading businesses with durable competitive advantages, partnering with management teams to build category-defining companies.",items:["Control buyouts in healthcare, technology, and industrial sectors","Revenue target: $15M–$200M","Primary markets: North America and Northern Europe","Typical hold: 5–7 years","Value creation via operational improvement, M&A, and geographic expansion"]},
-    "Real Estate":{body:"Our real estate platform deploys capital across logistics, multifamily, and commercial assets in high-conviction markets, combining local market expertise with institutional asset management.",items:["Value-add and core-plus strategies","Focus markets: Gateway cities and high-growth secondary markets","Asset types: Logistics, multifamily, life science, and select retail","ESG integration in development and renovation mandates"]},
-    "Fixed Income & FX":{body:"Our macro and systematic fixed income capabilities deliver differentiated exposure to global interest rate and currency markets through both long-only and absolute-return mandates.",items:["Discretionary global macro fixed income","Systematic FX and rates overlays","Credit-oriented fixed income with PE credit integration","Custom liability-driven solutions"]},
+    "Private Equity":{
+      en:{body:"We acquire controlling or meaningful stakes in private businesses and select publicly listed companies, with the objective of operational transformation and long-term value creation. Strategies include buy-and-build, sector consolidation, and taking public companies private.",
+        items:["Focus: Africa — retail, consumer staples, high-growth sectors","Buy-and-build and sector consolidation strategies","Hold period: 3–7 years","Strong EBITDA from consumer staples and cash-flowing businesses","Portfolio allocation: ~60% of AUM ($1.15M)"]},
+      fr:{body:"Nous acquérons des participations significatives ou majoritaires dans des entreprises privées et certaines sociétés cotées, en vue d'une transformation opérationnelle et d'une création de valeur à long terme. Cela inclut les stratégies de build-up, consolidation sectorielle, et retrait de la cote.",
+        items:["Focus : Afrique — distribution, conso. de base, secteurs à forte croissance","Stratégies de build-up et consolidation sectorielle","Durée de détention : 3–7 ans","EBITDA solide des biens de consommation et secteurs défensifs","Allocation : ~60% de l'AUM (1,15 M$)"]},
+    },
+    "Commodities":{
+      en:{body:"We invest in and trade physical commodities across four verticals: textile and cotton trade, luxury goods, agricultural commodities (grains, soft commodities), and livestock/cattle. We build regional sourcing networks and capture margin across the supply chain.",
+        items:["Textiles & cotton trade — CEMAC and West Africa","Luxury goods — rising urban demand in Senegal and West Africa","Agricultural commodities: grains, soft commodities","Livestock and cattle — local sourcing networks","Hold period: Spot to 18 months · Portfolio allocation: ~18% of AUM ($350K)"]},
+      fr:{body:"Nous investissons dans et négocions des matières premières physiques sur quatre verticaux : commerce du textile et du coton, produits de luxe, matières premières agricoles (céréales, cultures tendres), et élevage/bétail. Réseaux d'approvisionnement régionaux, logistique maîtrisée.",
+        items:["Textile & coton — CEMAC et Afrique de l'Ouest","Produits de luxe — montée en puissance de la demande urbaine au Sénégal","Matières premières agricoles : céréales, cultures tendres","Bétail et élevage — réseaux d'approvisionnement locaux","Durée : Spot à 18 mois · Allocation : ~18% de l'AUM (350 K$)"]},
+    },
+    "Real Estate":{
+      en:{body:"U.S.-based strategy, currently in active fundraising. We target residential and multifamily properties via fix-and-flip, buy-and-hold, and distressed/special situation strategies. As capital scales, we expand into commercial, office, warehouse and opportunistic assets.",
+        items:["Primary market: USA — residential & multifamily","Strategies: fix-and-flip, buy-and-hold, distressed/special situations","Expansion targets: commercial, office, warehouse","Hold period: 6 months to 5+ years","Currently fundraising — contact us to discuss participation"]},
+      fr:{body:"Stratégie basée aux États-Unis, en phase active de levée de fonds. Nous ciblons initialement le résidentiel et le multifamilial via réhabilitation-revente, buy-and-hold et situations spéciales. Extension future : commercial, bureaux, entrepôts, actifs opportunistes.",
+        items:["Marché principal : USA — résidentiel & multifamilial","Stratégies : réhabilitation-revente, buy-and-hold, situations spéciales","Extensions : commercial, bureaux, entrepôts","Durée : 6 mois à 5+ ans","En levée de fonds — contactez-nous pour discuter de votre participation"]},
+    },
   };
   const s=strats[sub];
+  const d=s?s[lang]||s.en:null;
   return(
     <div>
-      <PageHero eyebrow="Capital Solutions" title={sub.toUpperCase()} body={s?.body}/>
+      <PageHero eyebrow={lang==="en"?"Capital Solutions":"Stratégies d'Investissement"} title={sub.toUpperCase()} body={d?.body}/>
       <div style={{maxWidth:960,margin:"0 auto",padding:"64px max(16px,4vw)"}}>
-        {s?.items.map(item=>(
+        {d?.items.map(item=>(
           <div key={item} style={{display:"flex",gap:16,padding:"14px 0",borderBottom:"1px solid var(--lg)"}}>
             <div style={{width:8,height:8,background:"var(--blue)",borderRadius:"50%",flexShrink:0,marginTop:8}}/>
             <span style={{color:"var(--body)",fontSize:15}}>{item}</span>
@@ -1007,6 +1183,129 @@ function PrivateCreditPublic(){
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+//  FUND TERMS
+// ─────────────────────────────────────────────────────────────────────────────
+function FundTerms(){
+  const [lang]=useLang();
+  const copy={
+    en:{
+      eyebrow:"Structure",h:"FUND TERMS",
+      sub:"Clear terms. Aligned incentives. We want investors who share our values, our patience, and our conviction in what Africa can become. If you trust us, we will make you a great deal of money.",
+      terms:[["2.0%","Management Fee","Annual, on committed capital"],["20%","Performance Fee","Of profits above the hurdle rate"],["12%","Hurdle Rate","Annual — investors paid first"],["1 Year","Lock-Up Period","Strategy-dependent; capital call structure"]],
+      thesisTitle:"The Flexible Capital Thesis",
+      thesis:"Flexible capital means the ability to deploy across the capital structure — equity, mezzanine, senior secured debt, and convertible instruments — depending on what a given company actually needs at a given stage. The same company needs different instruments at different stages of its lifecycle. A fund that can only offer one instrument is forced to either pass on good companies at the wrong stage or deploy the wrong instrument. Flexible capital removes that constraint.",
+      thesisPoints:[
+        "A company raising its first institutional round needs equity and founder alignment — lead with minority equity, preserve upside.",
+        "A company with proven revenue but tight margins needs working capital that doesn't dilute — use revenue-based finance or a senior facility.",
+        "A company making a major capital investment needs long-tenor debt — provide a mezzanine bridge while it waits for bank eligibility.",
+        "A company approaching acquisition readiness needs bridge equity and valuation support — provide convertible notes with strategic rights.",
+      ],
+      howTitle:"How the Fund Works",
+      steps:[
+        "Each strategy operates under its own mandate with a dedicated team — PE, Private Credit, Commodities, and Real Estate each have distinct investment processes.",
+        "Capital calls are deployed across strategies based on mandate and opportunity set. Investors may participate in one or more fund verticals.",
+        "Performance is calculated per fund. An 'eat what you kill' culture means every deal team is directly accountable for the returns they generate.",
+        "Minimum investment levels and co-investment opportunities are available on a case-by-case basis. Contact us to discuss your allocation.",
+      ],
+      roadTitle:"20-Year Growth Roadmap",
+      road:[
+        ["2024","Launch","$56K seed capital — peer lending & first PE deals. Track record begins."],
+        ["2025","Foundation","Multi-strategy fund, $167K AUM (+195% in 11 months). Team of 3. Local regulatory relationships established."],
+        ["2026","Scale","$1.92M AUM. Real Estate fundraise launch in U.S. Four active strategies."],
+        ["2027–28","Expand","Larger Private Credit tickets. Institutional LP outreach — DFIs, family offices. $8M AUM target."],
+        ["2030","Platform","$20M AUM. Pan-African platform across Senegal, Cameroon, and West Africa. Conservative case."],
+        ["2035","Institution","$100M+ AUM. Institutional LP base. Regional expansion into 3+ WAEMU/CEMAC markets. Fund II closed."],
+        ["2040–44","Legacy","$500M–$1B+ AUM. Succession plan executed. The institution outlives its founders."],
+      ],
+      cta:"Get In Touch",
+    },
+    fr:{
+      eyebrow:"Structure",h:"CONDITIONS DU FONDS",
+      sub:"Des conditions claires. Des intérêts alignés. Nous cherchons des investisseurs qui partagent nos valeurs, notre patience et notre conviction dans ce que l'Afrique peut devenir.",
+      terms:[["2,0%","Frais de Gestion","Annuels, sur le capital engagé"],["20%","Frais de Performance","Des profits au-dessus du taux plancher"],["12%","Taux Plancher","Annuel — les investisseurs sont payés en premier"],["1 An","Période de Blocage","Selon la stratégie ; structure de capital calls"]],
+      thesisTitle:"La Thèse du Capital Flexible",
+      thesis:"Le capital flexible signifie la capacité de déployer sur toute la structure du capital — equity, mezzanine, dette senior sécurisée, instruments convertibles — selon ce dont une entreprise a réellement besoin à un stade donné. La même entreprise a besoin d'instruments différents à différentes étapes de son cycle de vie.",
+      thesisPoints:[
+        "Une entreprise levant son premier tour institutionnel a besoin d'equity et d'alignement avec les fondateurs.",
+        "Une entreprise avec des revenus prouvés mais des marges serrées a besoin de fonds de roulement sans dilution.",
+        "Une entreprise réalisant un investissement en capital majeur a besoin d'une dette à long terme — nous fournissons un bridge mezzanine.",
+        "Une entreprise approchant de l'acquisition a besoin d'equity bridge — nous fournissons des billets convertibles avec droits stratégiques.",
+      ],
+      howTitle:"Comment Fonctionne le Fonds",
+      steps:[
+        "Chaque stratégie opère sous son propre mandat avec une équipe dédiée — PE, Crédit Privé, Matières Premières et Immobilier ont chacun leurs propres processus d'investissement.",
+        "Les capital calls sont déployés selon le mandat et les opportunités. Les investisseurs participent à un ou plusieurs fonds verticaux.",
+        "Les commissions de performance sont calculées par fonds. La culture 'on mange ce qu'on chasse' signifie que chaque équipe est comptable des rendements générés.",
+        "Les montants minimums d'investissement et les opportunités de co-investissement sont disponibles au cas par cas. Contactez-nous.",
+      ],
+      roadTitle:"Feuille de Route sur 20 Ans",
+      road:[
+        ["2024","Lancement","56 K$ en capital de départ — prêts et premiers deals PE."],
+        ["2025","Fondation","Fonds multi-stratégies, 167 K$ d'AUM (+195% en 11 mois)."],
+        ["2026","Montée en Échelle","1,92 M$ AUM. Lancement levée Immobilier aux États-Unis."],
+        ["2027–28","Expansion","Plus grands tickets Crédit Privé. Approche LPs institutionnels. Objectif 8 M$ AUM."],
+        ["2030","Plateforme","20 M$ AUM. Plateforme panafricaine. Scénario conservateur."],
+        ["2035","Institution","100 M$+ AUM. Base LP institutionnelle. Expansion dans 3+ marchés WAEMU/CEMAC."],
+        ["2040–44","Héritage","500 M$–1 Md$+ AUM. Plan de succession exécuté. L'institution survit à ses fondateurs."],
+      ],
+      cta:"Nous Contacter",
+    },
+  };
+  const c=copy[lang];
+  return(
+    <div>
+      <PageHero eyebrow={c.eyebrow} title={c.h} body={c.sub}/>
+      <div style={{maxWidth:960,margin:"0 auto",padding:"64px max(16px,4vw)"}}>
+        {/* Terms grid */}
+        <div className="rg-4" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:20,marginBottom:56}}>
+          {c.terms.map(([v,l,s])=>(
+            <div key={l} style={{...T.card,textAlign:"center",borderTop:"3px solid var(--blue)"}}>
+              <div style={{fontFamily:"var(--ff-h)",fontSize:40,fontWeight:800,color:"var(--blue)",lineHeight:1}}>{v}</div>
+              <div style={{fontWeight:700,color:"var(--head)",marginTop:8,fontSize:15}}>{l}</div>
+              <div style={{color:"var(--dim)",fontSize:12,marginTop:4,lineHeight:1.5}}>{s}</div>
+            </div>
+          ))}
+        </div>
+        {/* Flexible Capital Thesis */}
+        <div style={{...T.card,marginBottom:40,borderLeft:"3px solid var(--blue)"}}>
+          <h2 style={{...T.hdg,fontSize:22,marginBottom:14}}>{c.thesisTitle}</h2>
+          <p style={{color:"var(--body)",fontSize:14,lineHeight:1.85,marginBottom:20}}>{c.thesis}</p>
+          {c.thesisPoints.map((pt,i)=>(
+            <div key={i} style={{display:"flex",gap:14,marginBottom:12}}>
+              <div style={{width:6,height:6,borderRadius:"50%",background:"var(--blue)",marginTop:8,flexShrink:0}}/>
+              <p style={{color:"var(--dim)",fontSize:14,lineHeight:1.8,margin:0}}>{pt}</p>
+            </div>
+          ))}
+        </div>
+        {/* How it works */}
+        <div style={{...T.card,marginBottom:40}}>
+          <h2 style={{...T.hdg,fontSize:22,marginBottom:24}}>{c.howTitle}</h2>
+          {c.steps.map((step,i)=>(
+            <div key={i} style={{display:"flex",gap:16,marginBottom:18}}>
+              <div style={{width:26,height:26,borderRadius:"50%",background:"var(--blue)",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"var(--ff-h)",fontSize:13,fontWeight:800,flexShrink:0}}>{i+1}</div>
+              <p style={{color:"var(--body)",fontSize:14,lineHeight:1.8,margin:0}}>{step}</p>
+            </div>
+          ))}
+        </div>
+        {/* Roadmap */}
+        <h2 style={{...T.hdg,fontSize:22,marginBottom:24}}>{c.roadTitle}</h2>
+        {c.road.map(([year,title,desc])=>(
+          <div key={year} style={{display:"grid",gridTemplateColumns:"80px 120px 1fr",gap:16,paddingBottom:20,borderBottom:"1px solid var(--lg)",marginBottom:20,alignItems:"start"}}>
+            <div style={{fontFamily:"var(--ff-h)",fontSize:14,fontWeight:700,color:"var(--blue)"}}>{year}</div>
+            <div style={{fontWeight:700,color:"var(--head)",fontSize:14}}>{title}</div>
+            <div style={{color:"var(--dim)",fontSize:13,lineHeight:1.7}}>{desc}</div>
+          </div>
+        ))}
+        <div style={{marginTop:32}}>
+          <button style={T.btnP} onClick={()=>navigate("Contact")}>{c.cta}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 //  CAREERS
 // ─────────────────────────────────────────────────────────────────────────────
 function Careers(){
@@ -1021,7 +1320,7 @@ function Careers(){
               <h3 style={{...T.hdg,fontSize:17,marginBottom:6}}>{r.t}</h3>
               <div style={{display:"flex",gap:10}}><span style={T.tag()}>{r.d}</span><span style={{fontSize:13,color:"var(--dim)"}}>{r.l}</span></div>
             </div>
-            <button style={T.btnO} onClick={()=>alert("Send CV to careers@primealphasecurities.com")}>Apply</button>
+            <button style={T.btnO} onClick={()=>alert("Send CV to aurel.botouli@primealphasecurities.com")}>Apply</button>
           </div>
         ))}
       </div>
@@ -1093,7 +1392,7 @@ function Contact(){
       <PageHero eyebrow="Get In Touch" title="CONTACT"/>
       <div style={{maxWidth:1100,margin:"0 auto",padding:"64px max(16px,4vw)",display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",gap:40}}>
         <div>
-          {[["New York HQ","745 Fifth Avenue, 32nd Floor\nNew York, NY 10151"],["London","1 Grosvenor Square\nLondon W1K 6AB, UK"],["Singapore","Marina Bay Financial Centre\nTower 3 #23-01"],["General","info@primealphasecurities.com"],["Investor Relations","ir@primealphasecurities.com"]].map(([k,v])=>(
+          {[["Compliance","compliance@primealphasecurities.com"],["Investor Relations","ir@primealphasecurities.com"],["Website","www.primealphasecurities.com"],["Markets","CEMAC · West Africa · USA"],["Founded","June 2024"]].map(([k,v])=>(
             <div key={k} style={{marginBottom:24}}>
               <div style={{fontSize:10,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:"var(--blue)",marginBottom:6}}>{k}</div>
               <div style={{color:"var(--body)",fontSize:14,lineHeight:1.75,whiteSpace:"pre-line"}}>{v}</div>
@@ -1206,7 +1505,7 @@ function LoginPage({type,onSuccess}){
           </p>
           <div style={{marginTop:32,padding:"14px 18px",background:"rgba(0,87,255,0.15)",borderRadius:"var(--r)",fontSize:12,color:"rgba(255,255,255,0.6)",fontFamily:"var(--ff-m)",lineHeight:1.7}}>
             {type==="investor"
-              ? "investor.primealphasecurities.com"
+              ? "primealphasecurities.com/investor"
               : "primealphasecurities.com/worker"}
           </div>
         </div>
@@ -2262,6 +2561,7 @@ export default function App(){
   const [page,sp]=useState(()=>IS_PUBLIC?getPageFromPath():"home");
   const [investorUser,siu]=useState(null);
   const [workerUser,swu]=useState(null);
+  const [lang,setLang]=useState("en");
 
   // Inject global styles
   useEffect(()=>{
@@ -2273,7 +2573,7 @@ export default function App(){
 
   // Document title
   useEffect(()=>{
-    document.title=IS_INVESTOR?"Investor Portal — Prime Alpha Securities":"Prime Alpha Securities";
+    document.title = page==="investor" ? "Investor Portal — Prime Alpha Securities" : page==="worker" ? "Team Console — Prime Alpha Securities" : "Prime Alpha Securities";
   },[]);
 
   // Browser back/forward
@@ -2295,27 +2595,25 @@ export default function App(){
     return()=>{window.history.pushState=orig;};
   },[]);
 
-  // ── Subdomain routing ─────────────────────────────────────────────
-  if(IS_INVESTOR){
-    if(investorUser)return<InvestorPortal user={investorUser} setUser={siu} onLogout={()=>siu(null)}/>;
-    return<LoginPage type="investor" onSuccess={u=>siu(u)}/>;
-  }
-
   // ── Public URL routing ────────────────────────────────────────────
   const renderPage=()=>{
     switch(page){
+      case"investor":         return investorUser?<InvestorPortal user={investorUser} setUser={siu} onLogout={()=>{siu(null);navigate("home");}}/>:<LoginPage type="investor" onSuccess={u=>siu(u)}/>;
       case"worker":          return workerUser?<WorkerPortal user={workerUser} onLogout={()=>{swu(null);navigate("home");}}/>:<LoginPage type="worker" onSuccess={u=>swu(u)}/>;
       case"home":             return<PublicHome/>;
       case"Overview":         return<WhoWeAre sub="Overview"/>;
+      case"Our Story":        return<WhoWeAre sub="Our Story"/>;
+      case"The Team":         return<WhoWeAre sub="The Team"/>;
       case"Culture":          return<WhoWeAre sub="Culture"/>;
-      case"Leadership":       return<WhoWeAre sub="Leadership"/>;
+      case"Leadership":       return<WhoWeAre sub="The Team"/>;
       case"Civic Priorities": return<WhoWeAre sub="Civic Priorities"/>;
       case"Who We Are":       return<WhoWeAre sub="Overview"/>;
       case"What We Do":       return<WhatWeDo sub="Overview"/>;
       case"Private Equity":   return<WhatWeDo sub="Private Equity"/>;
       case"Private Credit":   return<WhatWeDo sub="Private Credit"/>;
       case"Real Estate":      return<WhatWeDo sub="Real Estate"/>;
-      case"Fixed Income & FX":return<WhatWeDo sub="Fixed Income & FX"/>;
+      case"Commodities":      return<WhatWeDo sub="Commodities"/>;
+      case"Fund Terms":        return<FundTerms/>;
       case"Careers":          return<Careers/>;
       case"Research":         return<Research/>;
       case"Contact":          return<Contact/>;
@@ -2328,10 +2626,12 @@ export default function App(){
   };
 
   return(
+    <LangCtx.Provider value={[lang,setLang]}>
     <div style={{minHeight:"100vh",background:"var(--w)"}}>
       <PublicNav/>
       {renderPage()}
       <PublicFooter/>
     </div>
+    </LangCtx.Provider>
   );
 }

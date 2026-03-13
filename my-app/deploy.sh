@@ -108,7 +108,7 @@ else
     -out    "$APP_DIR/certs/cert.pem" \
     -days 825 -nodes \
     -subj "/C=US/O=PrimeAlphaSecurities/CN=$PUBLIC_IP" \
-    -addext "subjectAltName=IP:$PUBLIC_IP,DNS:localhost,DNS:primealphasecurities.com,DNS:investor.primealphasecurities.com" 2>/dev/null
+    -addext "subjectAltName=IP:$PUBLIC_IP,DNS:localhost,DNS:primealphasecurities.com,DNS:investor.primealphasecurities.com,DNS:*.primealphasecurities.com" 2>/dev/null
   chmod 600 "$APP_DIR/certs/key.pem"
   ok "Self-signed cert generated for $PUBLIC_IP"
 fi
@@ -145,7 +145,7 @@ Environment=PORT_HTTP=80
 Environment=PORT_HTTPS=443
 Environment=AWS_REGION=us-east-1
 Environment=SES_FROM_EMAIL=noreply@primealphasecurities.com
-Environment=NOTIFY_EMAIL=ops@primealphasecurities.com
+Environment=NOTIFY_EMAIL=aurel.botouli@primealphasecurities.com
 
 [Install]
 WantedBy=multi-user.target
@@ -161,20 +161,20 @@ systemctl start "$SVC"
 sleep 3
 
 HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/ 2>/dev/null || echo 000)
-HTTPS_CODE=$(curl -sk -o /dev/null -w "%{http_code}" https://localhost/ 2>/dev/null || echo 000)
+# HTTPS_CODE=$(curl -sk -o /dev/null -w "%{http_code}" https://localhost/ 2>/dev/null || echo 000)
 API_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/api/investor 2>/dev/null || echo 000)
 
 PUBLIC_IP=$(curl -s --max-time 5 http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null \
             || hostname -I | awk '{print $1}')
 
 echo ""
-if [[ "$HTTP_CODE" == "200"  ]]; then
+if [[ "$HTTP_CODE" == "200" ]]; then
   echo -e "${GREEN}"
   echo "  ╔══════════════════════════════════════════════╗"
   echo "  ║          DEPLOYMENT SUCCESSFUL  ✓            ║"
   echo "  ╠══════════════════════════════════════════════╣"
   printf "  ║  HTTP  →  http://%-25s  ║\n"  "$PUBLIC_IP"
-  # printf "  ║  HTTPS →  https://%-24s  ║\n" "$PUBLIC_IP"
+  printf "  ║  HTTPS →  https://%-24s  ║\n" "$PUBLIC_IP"
   echo "  ╠══════════════════════════════════════════════╣"
   echo "  ║  API status: HTTP=$HTTP_CODE  HTTPS=$HTTPS_CODE  /api=$API_CODE       ║"
   echo "  ╠══════════════════════════════════════════════╣"
@@ -190,18 +190,34 @@ if [[ "$HTTP_CODE" == "200"  ]]; then
     echo "  App still works — falls back to demo data"
   fi
   echo ""
-  echo "  ── SUBDOMAIN SETUP (required for investor portal) ──────────"
-  echo "  In Route 53 (or your DNS provider), create these A records"
-  echo "  pointing to this EC2 IP: $PUBLIC_IP"
+  echo "  ── INVESTOR SUBDOMAIN SETUP ──────────────────────────────────"
+  echo "  The server is running. For investor.primealphasecurities.com"
+  echo "  to work you need ALL FOUR of these:"
   echo ""
-  echo "    primealphasecurities.com          →  $PUBLIC_IP"
-  echo "    investor.primealphasecurities.com →  $PUBLIC_IP"
+  echo "  1. DNS — Add A records in Route 53 / your DNS provider:"
+  echo "       primealphasecurities.com          →  $PUBLIC_IP"
+  echo "       investor.primealphasecurities.com →  $PUBLIC_IP"
+  echo "     (TTL 300 is fine; changes can take up to 1hr to propagate)"
   echo ""
-  echo "  The server already handles both — the React app detects the"
-  echo "  subdomain client-side and loads the Investor Portal."
-  echo "  Worker console is at: https://primealphasecurities.com/worker"
+  echo "  2. EC2 Security Group — inbound rules must allow:"
+  echo "       Port 443 (HTTPS) from 0.0.0.0/0"
+  echo "       Port 80  (HTTP)  from 0.0.0.0/0"
+  echo "     Check: AWS Console → EC2 → Security Groups → Inbound Rules"
+  echo ""
+  echo "  3. SSL cert — The self-signed cert covers investor.* but browsers"
+  echo "     will show a warning. To get a trusted cert (no warning) run:"
+  echo "       sudo snap install --classic certbot"
+  echo "       sudo certbot certonly --standalone -d primealphasecurities.com -d investor.primealphasecurities.com"
+  echo "     Then update deploy.sh CERTS path to certbot output and redeploy."
+  echo ""
+  echo "  4. Verify — Once DNS propagates, test with:"
+  echo "       curl -I https://investor.primealphasecurities.com"
+  echo "     Should return HTTP 200. The React app detects the subdomain"
+  echo "     via window.location.hostname and loads the Investor Portal."
+  echo ""
+  echo "  Worker console → https://primealphasecurities.com/worker"
   echo "  ────────────────────────────────────────────────────────────"
 else
   systemctl status "$SVC" --no-pager -l | tail -20
-  die "Server health check failed (HTTP=$HTTP_CODE HTTPS=$HTTPS_CODE). Check: sudo journalctl -u pas -n 50"
+  die "Server health check failed (HTTP=$HTTP_CODE). Check: sudo journalctl -u pas -n 50"
 fi

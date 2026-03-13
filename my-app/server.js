@@ -33,9 +33,9 @@ const { SESv2Client, SendEmailCommand }  = require('@aws-sdk/client-sesv2');
 // ── Config ────────────────────────────────────────────────────────────────────
 const PORT_HTTP    = Number(process.env.PORT_HTTP)  || 80;
 const PORT_HTTPS   = Number(process.env.PORT_HTTPS) || 443;
-const REGION       = process.env.AWS_REGION         || 'eu-west-2';
-const SES_FROM     = process.env.SES_FROM_EMAIL     || 'compliance@primealphasecurities.com';   // must be SES-verified
-const NOTIFY_EMAIL = process.env.NOTIFY_EMAIL       || 'compliance@primealphasecurities.com';   // ops inbox
+const REGION       = process.env.AWS_REGION         || 'us-east-1';
+const SES_FROM     = process.env.SES_FROM_EMAIL     || '';   // must be SES-verified
+const NOTIFY_EMAIL = process.env.NOTIFY_EMAIL       || 'aurel.botouli@primealphasecurities.com';
 const DIST         = path.join(__dirname, 'dist');
 const CERTS        = path.join(__dirname, 'certs');
 
@@ -351,6 +351,14 @@ function handleStatic(req, res) {
 
 // ── Main handler ──────────────────────────────────────────────────────────────
 function handler(req, res) {
+  // Redirect plain HTTP → HTTPS so investor.primealphasecurities.com works
+  // Skip redirect for API calls (EC2 healthchecks use HTTP)
+  if (!req.socket.encrypted && !req.url.startsWith('/api/')) {
+    const host = (req.headers.host || 'primealphasecurities.com').replace(/:\d+$/, '');
+    res.writeHead(301, { Location: `https://${host}${req.url}` });
+    res.end();
+    return;
+  }
   if (req.url.startsWith('/api/notify/')) return handleNotify(req, res);
   if (req.url.startsWith('/api/'))        return handleApi(req, res);
   handleStatic(req, res);
