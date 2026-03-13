@@ -90,7 +90,7 @@ const PK = {
   "credit_application": "appId",
   "real_estate":        "assetId",
   "articles":           "articleId",
-  "enquiries":          "enquiryId",
+  "inquiries":          "inquiryId",
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -235,7 +235,7 @@ const SEED = {
     {assetId:"re002",name:"Riverside Multifamily Portfolio",type:"Multifamily",location:"Austin, TX",status:"owned",purchasePrice:28000000,currentValue:34500000,irr:11.8,occupancy:94,sqft:312000},
     {assetId:"re003",name:"Canary Wharf Commercial",type:"Commercial",location:"London, UK",status:"development",purchasePrice:65000000,currentValue:65000000,irr:null,occupancy:0,sqft:220000},
   ],
-  "enquiries": [],
+  "inquiries": [],
   "credit_application": [],
 };
 
@@ -657,6 +657,7 @@ function PublicNav(){
     {label:"What We Do",items:["Overview","Private Equity","Private Credit","Commodities","Real Estate"]},
     {label:"Fund Terms",items:[]},
     {label:"Research",items:[]},
+    {label:"Careers",items:[]},
     {label:"Contact",items:[]},
   ];
   return(
@@ -757,7 +758,7 @@ function PublicFooter(){
     ?[["Company",["Overview","Our Story","The Team","Civic Priorities","Research"]],
       ["Capital Solutions",["Private Equity","Private Credit","Commodities","Real Estate"]],
       ["Legal",["Privacy","Terms","Notices","Disclosures"]]]
-    :[["Entreprise",["Overview","Our Story","The Team","Civic Priorities","Research"]],
+    :[["Entreprise",["Overview","The Team","Civic Priorities","Research"]],
       ["Stratégies",["Private Equity","Private Credit","Commodities","Real Estate"]],
       ["Légal",["Privacy","Terms","Notices","Disclosures"]]];
   return(
@@ -977,12 +978,12 @@ function WhoWeAre({sub}){
   const C={
     Overview:{
       en:{h:"Who We Are",body:"Prime Alpha Securities is a Pan-African alternative investment management firm founded in June 2024 by three co-founders — an economist, a commodity engineer, and a technologist. We deploy flexible capital across Private Equity, Private Credit, Commodities, and Real Estate — primarily across CEMAC and West African markets, with an expanding U.S. Real Estate platform. We exist to correct a specific capital market failure: the Missing Middle of African business — companies too large for microfinance and too informal for institutional PE.",
-        stats:[["June 2024","Founded","CEMAC / West Africa"],["$1.92M","AUM — Dec. 2026","Across 4 strategies"],["153.7%","Blended Return","All capital ever deployed"],["$20M","2030 Target","Conservative AUM target"]]},
+        stats:[["June 2024","Founded","CEMAC / West Africa"],["$1.92M","AUM — Dec. 2026","Across 4 strategies"],["153.7%","Blended Return","All capital ever deployed"]]},
       fr:{h:"Qui Sommes-Nous",body:"Prime Alpha Securities est une firme panafricaine de gestion d'investissements alternatifs fondée en juin 2024 par trois co-fondateurs. Nous déployons des capitaux flexibles en Private Equity, Crédit Privé, Matières Premières et Immobilier — principalement sur les marchés CEMAC et Afrique de l'Ouest, avec une plateforme Immobilier en expansion aux États-Unis.",
-        stats:[["Juin 2024","Fondé","CEMAC / Afrique de l'Ouest"],["1,92 M$","AUM — Déc. 2026","Sur 4 stratégies"],["153,7%","Rendement Pondéré","Tout capital déployé"],["20 M$","Objectif 2030","Scénario conservateur"]]},
+        stats:[["Juin 2024","Fondé","CEMAC / Afrique de l'Ouest"],["1,92 M$","AUM — Déc. 2026","Sur 4 stratégies"],["153,7%","Rendement Pondéré","Tout capital déployé"]]},
     },
     Culture:{
-      en:{h:"Our Culture",body:"Culture is not what you say you believe. It is what you do when you are under pressure, short on time, and the right answer is inconvenient. These are the non-negotiables that define how we operate — built before pressure tested them.",
+      en:{h:"Our Culture",body:"Culture is not what you say you believe. It is what you do when you are under pressure, short on time, and the right answer is inconvenient. These are the non-negotiables that define how we operate. Built before pressure tested them.",
         pillars:[
           ["Eat What You Kill","Every deal team is directly accountable for the returns they generate. No hiding behind aggregated fund performance. We hunt together, but individual accountability is absolute."],
           ["Zero Tolerance for Bribery","Any engagement in bribery of public officials — by any team member or portfolio company — results in immediate divestment and disclosure to LPs. No exceptions for 'how business is done here.'"],
@@ -1000,26 +1001,6 @@ function WhoWeAre({sub}){
           ["Conformité Légale — Toujours","Nous n'investissons pas dans des marchés où opérer légalement est structurellement impossible, quelle que soit l'opportunité de rendement."],
           ["Désaccord Consigné","Quand les fondateurs ne sont pas d'accord sur une décision, la position dissidente est enregistrée dans les procès-verbaux du comité d'investissement."],
         ]},
-    },
-    "Our Story":{
-      en:{eyebrow:"Genesis",h:"OUR STORY",body:"The unlikely origin story nobody saw coming — except us.",
-        timeline:[
-          ["June 2024","The Spark","A group of college students — engineers, a roboticist, and one very persistent finance guy — started lending money to friends. Informally. Profitably. Repeatedly. What began as peer-to-peer credit became the kernel of an institutional investment firm."],
-          ["Q3 2024","The Realization","Noe Ikoué looked at the group's chaotic deals and said: 'We're already running a fund. Let's make it official.' The informal activity had a track record. It just needed a structure — and the discipline to turn it into something institutional."],
-          ["Q4 2024","The Pivot","They explored a hedge fund model — until they looked carefully at CEMAC markets. Illiquid. Limited derivatives. No short-selling infrastructure. The data said change. They pivoted to Private Equity and built a flexible capital thesis around the specific failures of the markets they knew."],
-          ["2025","Formalization","The multi-strategy framework took shape. Original capital of $56,719 grew to $167,388 — a +195% return in 11 months with zero outside capital. A verifiable track record was underway. The firm's DNA was written."],
-          ["2026","The Platform","A $700K capital raise grew to $1.285M. The original capital base continued compounding to $634,800. After partial profit distributions, total AUM reached $1.92M across four active strategies. Real Estate fundraising launched in the U.S."],
-        ],
-        quote:"\"Everyone is running to where the system is already working. We want to build the system.\" — Noe Ikoué, CIO"},
-      fr:{eyebrow:"Genèse",h:"NOTRE HISTOIRE",body:"L'histoire improbable que personne n'avait vue venir — sauf nous.",
-        timeline:[
-          ["Juin 2024","L'Étincelle","Un groupe d'étudiants — ingénieurs, roboticien et un homme de finance très tenace — ont commencé à prêter de l'argent à leurs amis. Informellement. Avec profit. Régulièrement."],
-          ["T3 2024","La Prise de Conscience","Noe Ikoué regarda les transactions chaotiques du groupe et dit : « On gère déjà un fonds. Formalisons la chose. » L'activité informelle avait un historique. Il lui fallait juste une structure."],
-          ["T4 2024","Le Pivot","Ils envisagèrent un hedge fund — jusqu'à l'analyse approfondie des marchés CEMAC. Illiquides. Peu de dérivés. Short selling quasi inexistant. Les données imposaient un changement. Pivot vers le Private Equity."],
-          ["2025","Formalisation","Le cadre multi-stratégies a pris forme. Le capital initial de 56 719 $ a crû jusqu'à 167 388 $ — un rendement de +195% en 11 mois sans capital extérieur."],
-          ["2026","La Plateforme","Une levée de 700 K$ est passée à 1 285 200 $. L'AUM total a atteint 1,92 M$ sur quatre stratégies actives. Lancement de la levée Immobilier aux États-Unis."],
-        ],
-        quote:"« Tout le monde court là où le système fonctionne déjà. Nous, nous voulons construire le système. » — Noe Ikoué, DII"},
     },
     "The Team":{
       en:{h:"The Team",
@@ -1050,19 +1031,13 @@ function WhoWeAre({sub}){
         ]},
     },
     "Civic Priorities":{
-      en:{h:"Civic Priorities",body:"We believe flexible capital carries civic responsibility. The capital market failure we exist to correct is not a generic 'Africa needs capital' story — it is a specific diagnosis of where the system fails and why. Our priorities are built from that diagnosis.",
+      en:{h:"Civic Priorities",body:"We believe flexible capital carries civic responsibility. The capital market failure we exist to correct is not a generic 'Africa needs capital' story is a specific diagnosis of where the system fails and why. Our priorities are built from that diagnosis.",
         civics:[
-          ["The Missing Middle","Companies generating $500K–$10M in annual revenue, employing 20–200 people, and requiring growth capital of $500K–$15M have no institutional home. Too large for microfinance, too informal for institutional PE. We exist for this cohort."],
-          ["Why Banks Fail SMEs","Commercial banks in Senegal and Cameroon are rationally responding to their own incentive structures — collateral-based underwriting, short-tenor deposits, and KYC calibrated for formal companies with audited financials. Most growth companies do not fit. We do not need banks to change. We fill the gap they leave."],
-          ["Financial Inclusion","57% of Africa's population is unbanked. Private credit fills a structural financing vacuum. Access to patient growth capital is not a luxury — it is the difference between a business that scales and one that stagnates."],
-          ["Local Presence, International Standards","Local presence means physical presence in market, local staff with operational networks, and deal origination from relationships. International standards means IFRS accounting, Big-4-ready audit processes, and governance structures that institutional LPs can diligence without friction. We commit to both."],
+          ["We are dedicated problem solvers committed to driving impact within our firm and across our communities. By giving our time, talent and expertise, we are working to advance opportunity and improve lives."]
         ]},
       fr:{h:"Priorités Civiques",body:"Nous croyons que le capital flexible porte une responsabilité civique. La défaillance du marché des capitaux que nous existons pour corriger n'est pas une histoire générique — c'est un diagnostic précis de l'endroit où le système échoue et pourquoi.",
         civics:[
-          ["Le Maillon Manquant","Les entreprises générant 500 K$–10 M$ de chiffre d'affaires annuel, employant 20 à 200 personnes, et nécessitant des capitaux de croissance de 500 K$ à 15 M$ n'ont pas de foyer institutionnel. Trop grandes pour la microfinance, trop informelles pour le PE institutionnel."],
-          ["Pourquoi les Banques Échouent","Les banques commerciales au Sénégal et au Cameroun répondent rationnellement à leurs propres structures d'incitation — souscription basée sur les garanties, dépôts à court terme, KYC calibré pour les entreprises formelles. La plupart des entreprises à forte croissance ne correspondent pas."],
-          ["Inclusion Financière","57% de la population africaine est non bancarisée. Le crédit privé comble un vide structurel de financement. L'accès au capital patient n'est pas un luxe — c'est la différence entre une entreprise qui grandit et une qui stagne."],
-          ["Présence Locale, Standards Internationaux","Présence locale signifie présence physique sur le marché, personnel local avec des réseaux opérationnels. Standards internationaux signifie comptabilité IFRS et structures de gouvernance que les LPs institutionnels peuvent auditer sans friction."],
+          ["Nous sommes des résolveurs de problèmes dévoués, engagés à générer de l'impact au sein de notre firme et dans nos communautés. En donnant notre temps, notre talent et notre expertise, nous travaillons à faire avancer les opportunités et améliorer les vies."],
         ]},
     },
   };
@@ -1140,7 +1115,7 @@ function WhatWeDo({ sub }) {
           "Geographic focus on CEMAC and West African markets, primarily in retail, consumer staples and high-growth sectors.",
           "We pursue buy-and-build programs and sector consolidation where fragmented markets create a structural opportunity.",
           "Target hold periods typically range from three to seven years, with exits designed to preserve and extend the value created.",
-          "We prioritise businesses with strong cash generation and defensible market positions, particularly in consumer-facing sectors.",
+          "We prioritise businesses with strong cash generation and defensible market positions, particularly in consumer facing sectors.",
         ],
       },
       fr: {
@@ -1158,12 +1133,13 @@ function WhatWeDo({ sub }) {
     "Commodities": {
       en: {
         eyebrow: "Capital Solutions",
-        body: "We invest in and trade physical commodities across four verticals: textile and cotton, luxury goods, agricultural commodities including grains and soft commodities, and livestock. Our edge is built on regional sourcing networks and deep supply chain knowledge developed on the ground across the CEMAC and West African corridor.",
+        body: "We invest in and trade physical commodities across a wide range of commodities due to their high demand and stability. Our edge is built on regional sourcing networks and deep supply chain knowledge developed on the ground across the CEMAC and West African corridor.",
         items: [
           "Textile and cotton trade across CEMAC and West Africa, leveraging established sourcing relationships.",
           "Luxury goods serving rising urban demand in Senegal, Cameroon and West Africa more broadly.",
           "Agricultural commodities including grains and soft commodities with logistics managed regionally.",
           "Livestock and cattle sourced through local networks with strong operational oversight.",
+          "We focus on commodities with strong local demand and supply dynamics, where our regional expertise creates a competitive advantage.",
         ],
       },
       fr: {
@@ -1174,6 +1150,7 @@ function WhatWeDo({ sub }) {
           "Produits de luxe répondant à la demande urbaine croissante au Sénégal, au Cameroun et dans l'Afrique de l'Ouest.",
           "Matières premières agricoles incluant céréales et cultures tendres avec une logistique gérée régionalement.",
           "Bétail et élevage approvisionnés via des réseaux locaux avec un suivi opérationnel solide.",
+          "Nous nous concentrons sur les matières premières avec de fortes dynamiques de demande et d'offre locales, où notre expertise régionale crée un avantage concurrentiel.",
         ],
       },
     },
@@ -1181,7 +1158,7 @@ function WhatWeDo({ sub }) {
     "Real Estate": {
       en: {
         eyebrow: "Capital Solutions",
-        body: "Our U.S. real estate strategy is currently in active fundraising. We target residential and multifamily properties through renovation and resale, long-term buy-and-hold, and distressed or special situation acquisitions. As capital scales, the mandate expands into commercial, office and warehouse assets.",
+        body: " We target wide range of properties through different strategies. Renovation and resale, long-term buy-and-hold, and distressed or special situation acquisitions. As capital scales, the mandate expands into commercial, office and warehouse assets.",
         items: [
           "Primary market focus on the United States, targeting residential and multifamily properties where value-add opportunities are clearly identifiable.",
           "Core strategies include renovation and resale programs, long-term income-generating holdings, and distressed or special situation acquisitions.",
@@ -1191,7 +1168,7 @@ function WhatWeDo({ sub }) {
       },
       fr: {
         eyebrow: "Stratégies d'Investissement",
-        body: "Notre stratégie immobilière américaine est en phase active de levée de fonds. Nous ciblons les biens résidentiels et multifamiliaux via réhabilitation-revente, détention longue durée et situations spéciales ou actifs en difficulté. À mesure que le capital croît, le mandat s'étend aux actifs commerciaux, bureaux et entrepôts.",
+        body: " Nous ciblons une large gamme de biens à travers différentes stratégies. Rénovation-revente, détention à long terme génératrice de revenus, et acquisitions en difficulté ou situations spéciales. À mesure que le capital augmente, le mandat s'étend aux actifs commerciaux, bureaux et entrepôts.",
         items: [
           "Focus principal sur les États-Unis, ciblant les biens résidentiels et multifamiliaux où les opportunités de création de valeur sont clairement identifiables.",
           "Les stratégies principales incluent les programmes de réhabilitation-revente, les détentions génératrices de revenus à long terme, et les acquisitions en difficulté ou situations spéciales.",
@@ -1345,21 +1322,20 @@ function FundTerms(){
       sub:"Clear terms. Aligned incentives. We want investors who share our values, our patience, and our conviction in what Africa can become. If you trust us, we will make you a great deal of money.",
       terms:[["2.0%","Management Fee","Annual, on committed capital"],["20%","Performance Fee","Of profits above the hurdle rate"],["12%","Hurdle Rate","Annual — investors paid first"],["1 Year","Lock-Up Period","Strategy-dependent; capital call structure"]],
       thesisTitle:"The Flexible Capital Thesis",
-      thesis:"Flexible capital means the ability to deploy across the capital structure — equity, mezzanine, senior secured debt, and convertible instruments — depending on what a given company actually needs at a given stage. The same company needs different instruments at different stages of its lifecycle. A fund that can only offer one instrument is forced to either pass on good companies at the wrong stage or deploy the wrong instrument. Flexible capital removes that constraint.",
+      thesis:"Flexible capital means the ability to deploy across the capital structure — equity, mezzanine, senior secured debt, and convertible instruments  depends on what a given company actually needs at a given stage. The same company needs different instruments at different stages of its lifecycle. A fund that can only offer one instrument is forced to either pass on good companies at the wrong stage or deploy the wrong instrument. Flexible capital removes that constraint.",
       thesisPoints:[
-        "A company raising its first institutional round needs equity and founder alignment — lead with minority equity, preserve upside.",
-        "A company with proven revenue but tight margins needs working capital that doesn't dilute — use revenue-based finance or a senior facility.",
-        "A company making a major capital investment needs long-tenor debt — provide a mezzanine bridge while it waits for bank eligibility.",
-        "A company approaching acquisition readiness needs bridge equity and valuation support — provide convertible notes with strategic rights.",
+        "A company raising its first institutional round needs equity and founder alignment leading with minority equity, preserve upside.",
+        "A company with proven revenue but tight margins needs working capital that does not dilute use revenue based finance or a senior facility.",
+        "A company making a major capital investment needs long tenor debt provide a mezzanine bridge while it waits for bank eligibility.",
+        "A company approaching acquisition readiness needs bridge equity and valuation support provides convertible notes with strategic rights.",
       ],
       howTitle:"How the Fund Works",
       steps:[
-        "Each strategy operates under its own mandate with a dedicated team — PE, Private Credit, Commodities, and Real Estate each have distinct investment processes.",
+        "Each strategy operates under its own mandate with a dedicated team , Private Credit, Commodities, and Real Estate each have distinct investment processes.",
         "Capital calls are deployed across strategies based on mandate and opportunity set. Investors may participate in one or more fund verticals.",
         "Performance is calculated per fund. An 'eat what you kill' culture means every deal team is directly accountable for the returns they generate.",
         "Minimum investment levels and co-investment opportunities are available on a case-by-case basis. Contact us to discuss your allocation.",
       ],
-
       cta:"Get In Touch",
     },
     fr:{
@@ -1367,26 +1343,19 @@ function FundTerms(){
       sub:"Des conditions claires. Des intérêts alignés. Nous cherchons des investisseurs qui partagent nos valeurs, notre patience et notre conviction dans ce que l'Afrique peut devenir.",
       terms:[["2,0%","Frais de Gestion","Annuels, sur le capital engagé"],["20%","Frais de Performance","Des profits au-dessus du taux plancher"],["12%","Taux Plancher","Annuel — les investisseurs sont payés en premier"],["1 An","Période de Blocage","Selon la stratégie ; structure de capital calls"]],
       thesisTitle:"La Thèse du Capital Flexible",
-      thesis:"Le capital flexible signifie la capacité de déployer sur toute la structure du capital — equity, mezzanine, dette senior sécurisée, instruments convertibles — selon ce dont une entreprise a réellement besoin à un stade donné. La même entreprise a besoin d'instruments différents à différentes étapes de son cycle de vie.",
+      thesis:"Le capital flexible signifie la capacité de déployer sur toute la structure du capital  equity, mezzanine, dette senior sécurisée, instruments convertibles selon ce dont une entreprise a réellement besoin à un stade donné. La même entreprise a besoin d'instruments différents à différentes étapes de son cycle de vie.",
       thesisPoints:[
         "Une entreprise levant son premier tour institutionnel a besoin d'equity et d'alignement avec les fondateurs.",
         "Une entreprise avec des revenus prouvés mais des marges serrées a besoin de fonds de roulement sans dilution.",
-        "Une entreprise réalisant un investissement en capital majeur a besoin d'une dette à long terme — nous fournissons un bridge mezzanine.",
-        "Une entreprise approchant de l'acquisition a besoin d'equity bridge — nous fournissons des billets convertibles avec droits stratégiques.",
+        "Une entreprise réalisant un investissement en capital majeur a besoin d'une dette à long terme  nous fournissons un bridge mezzanine.",
+        "Une entreprise approchant de l'acquisition a besoin d'equity bridge  nous fournissons des billets convertibles avec droits stratégiques.",
       ],
       howTitle:"Comment Fonctionne le Fonds",
       steps:[
-        "Chaque stratégie opère sous son propre mandat avec une équipe dédiée — PE, Crédit Privé, Matières Premières et Immobilier ont chacun leurs propres processus d'investissement.",
+        "Chaque stratégie opère sous son propre mandat avec une équipe dédiée , Crédit Privé, Matières Premières et Immobilier ont chacun leurs propres processus d'investissement.",
         "Les capital calls sont déployés selon le mandat et les opportunités. Les investisseurs participent à un ou plusieurs fonds verticaux.",
         "Les commissions de performance sont calculées par fonds. La culture 'on mange ce qu'on chasse' signifie que chaque équipe est comptable des rendements générés.",
         "Les montants minimums d'investissement et les opportunités de co-investissement sont disponibles au cas par cas. Contactez-nous.",
-      ],
-      roadTitle: "Feuille de Route",
-      road: [
-        ["2024", "Lancement",        "Capital de départ déployé en prêts et premiers deals de private equity. Le track record commence."],
-        ["2025", "Fondation",        "Fonds multi-stratégies formalisé. Premier track record de qualité institutionnelle établi sans capital extérieur."],
-        ["2026", "Montée en Échelle","Quatre stratégies actives simultanément. Lancement de la levée immobilière aux États-Unis."],
-        ["2027 et au-delà", "TBC",   "Les jalons et objectifs des années suivantes sont en cours de formalisation et seront publiés une fois confirmés."],
       ],
       cta:"Nous Contacter",
     },
@@ -1426,16 +1395,7 @@ function FundTerms(){
               <p style={{color:"var(--body)",fontSize:14,lineHeight:1.8,margin:0}}>{step}</p>
             </div>
           ))}
-        </div>
-        {/* Roadmap */}
-        <h2 style={{...T.hdg,fontSize:22,marginBottom:24}}>{c.roadTitle}</h2>
-        {c.road.map(([year,title,desc])=>(
-          <div key={year} style={{display:"grid",gridTemplateColumns:"80px 120px 1fr",gap:16,paddingBottom:20,borderBottom:"1px solid var(--lg)",marginBottom:20,alignItems:"start"}}>
-            <div style={{fontFamily:"var(--ff-h)",fontSize:14,fontWeight:700,color:"var(--blue)"}}>{year}</div>
-            <div style={{fontWeight:700,color:"var(--head)",fontSize:14}}>{title}</div>
-            <div style={{color:"var(--dim)",fontSize:13,lineHeight:1.7}}>{desc}</div>
-          </div>
-        ))}
+        </div>        
         <div style={{marginTop:32}}>
           <button style={T.btnP} onClick={()=>navigate("Contact")}>{c.cta}</button>
         </div>
@@ -1477,7 +1437,7 @@ function Careers() {
         id: "pe-associate",
         title: "Associate, Private Equity",
         dept: "Investments",
-        location: "Douala / Remote",
+        location: "Remote",
         type: "Full-time",
         description: "You will work directly with the CIO on sourcing, structuring and monitoring equity investments across CEMAC and West African markets. The role requires the ability to move from financial modelling to on-the-ground relationship management without losing rigour at either end.",
         requirements: [
@@ -1797,7 +1757,7 @@ function Contact(){
   const submit=async()=>{
     if(!form.name||!form.email||!form.message){alert(lang==="en"?"Fill required fields.":"Veuillez remplir les champs obligatoires.");return;}
     sv(true);
-    await api.put("enquiries",{inquiryId:`enq_${uid()}`,type:"contact",...form,submittedAt:now()});
+    await api.put("inquiries",{inquiryId:`inq_${uid()}`,type:"contact",...form,submittedAt:now()});
     await notify.inquiry(form);
     sv(false);ss(true);
   };
@@ -2859,7 +2819,7 @@ function WEmail({clients,workers,user,showToast}){
     const sentBy=typeof user!=="undefined"?user?.name:"worker";
     // Save log to DynamoDB and send real email via SES
     await Promise.all([
-      api.put("enquiries",{inquiryId:`em_${uid()}`,to:finalTo,subject,body,sentAt:now(),sentBy}),
+      api.put("inquiries",{inquiryId:`em_${uid()}`,to:finalTo,subject,body,sentAt:now(),sentBy}),
       notify.workerEmail({to:finalTo,subject,body,sentBy}),
     ]);
     ssn(false);sse(true);showToast(`Email sent to ${finalTo}`);
@@ -3036,7 +2996,6 @@ export default function App(){
       case"worker":          return workerUser?<WorkerPortal user={workerUser} onLogout={()=>{swu(null);navigate("home");}}/>:<LoginPage type="worker" onSuccess={u=>swu(u)}/>;
       case"home":             return<PublicHome/>;
       case"Overview":         return<WhoWeAre sub="Overview"/>;
-      case"Our Story":        return<WhoWeAre sub="Our Story"/>;
       case"The Team":         return<WhoWeAre sub="The Team"/>;
       case"Culture":          return<WhoWeAre sub="Culture"/>;
       case"Leadership":       return<WhoWeAre sub="The Team"/>;
