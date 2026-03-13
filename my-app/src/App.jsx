@@ -888,12 +888,31 @@ function PublicHome(){
       </section>
 
       {/* ── About strip ──────────────────────────────────────────────────── */}
-      <section style={{background:"var(--head)",padding:"80px max(24px,6vw)"}}>
+      {/* <section style={{background:"var(--head)",padding:"80px max(24px,6vw)"}}>
         <div style={{maxWidth:1100,margin:"0 auto",display:"grid",gridTemplateColumns:"1fr 1fr",gap:80,alignItems:"center"}} className="hero-grid">
+          <div>
+            <SectionLabel>{lang==="en"?"Our Story":"Notre Histoire"}</SectionLabel>
+            <h2 style={{fontFamily:"var(--ff-h)",fontSize:"clamp(28px,3.5vw,48px)",fontWeight:800,color:"#fff",letterSpacing:"-0.5px",marginBottom:20}}>
+              {lang==="en"?"FROM DORM ROOMS\nTO A PAN-AFRICAN\nPLATFORM.":"DES SALLES DE COURS\nÀ UNE PLATEFORME\nPANAFRICAINE."}
+            </h2>
+            <p style={{color:"rgba(255,255,255,0.55)",fontSize:15,lineHeight:1.9,marginBottom:24}}>
+              {lang==="en"
+                ?"A group of students — engineers, a roboticist, and one very persistent finance guy — started lending money to friends in June 2024. What began as $56,719 in seed capital has grown to $1.92M in AUM across four strategies."
+                :"Un groupe d'étudiants — ingénieurs, roboticien et un homme de finance très tenace — ont commencé à prêter de l'argent à leurs amis en juin 2024. Ce qui a commencé avec 56 719 $ est devenu 1,92 M$ d'AUM sur quatre stratégies."}
+            </p>
+            <blockquote style={{borderLeft:"3px solid var(--blue)",paddingLeft:16,marginBottom:28}}>
+              <p style={{color:"rgba(255,255,255,0.65)",fontSize:13,fontStyle:"italic",lineHeight:1.7}}>
+                {lang==="en"
+                  ?"\"Everyone is running to where the system is already working. We want to build the system.\" — Noe Ikoué, CIO"
+                  :"« Tout le monde court là où le système fonctionne déjà. Nous, nous voulons construire le système. » — Noe Ikoué, DII"}
+              </p>
+            </blockquote>
+            <button style={{...T.btnO,borderColor:"rgba(255,255,255,0.3)",color:"#fff"}} onClick={()=>navigate("Overview")}>{lang==="en"?"Who We Are →":"Qui Sommes-Nous →"}</button>
+          </div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:1,background:"rgba(255,255,255,0.06)"}}>
             {(lang==="en"
-              ?[["$56K → $1.92M","Total capital growth since June 2024"],["153.7%","Blended return "],["+195%","Return in first 11 months"]]
-              :[["56 K$ → 1,92 M$","Croissance totale depuis juin 2024"],["153,7%","Rendement pondéré"],["+195%","Rendement dans les 11 premiers mois"]]
+              ?[["$56K → $1.92M","Total capital growth since June 2024"],["153.7%","Blended return — all capital deployed"],["+195%","Return in first 11 months (no outside capital)"],["$20M","Conservative AUM target by 2030"]]
+              :[["56 K$ → 1,92 M$","Croissance totale depuis juin 2024"],["153,7%","Rendement pondéré — tout capital déployé"],["+195%","Rendement dans les 11 premiers mois"],["20 M$","Objectif AUM conservateur d'ici 2030"]]
             ).map(([k,v])=>(
               <div key={k} style={{background:"rgba(255,255,255,0.03)",padding:"24px 20px"}}>
                 <div style={{fontFamily:"var(--ff-h)",fontSize:18,fontWeight:800,color:"var(--blue)",marginBottom:6,lineHeight:1.1}}>{k}</div>
@@ -902,7 +921,7 @@ function PublicHome(){
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* ── Research ─────────────────────────────────────────────────────── */}
       <section style={{padding:"96px max(24px,6vw)",background:"var(--ow)"}}>
