@@ -39,7 +39,7 @@ const REGION        = process.env.AWS_REGION    || 'eu-west-2';
 const RESEND_KEY    = process.env.RESEND_API_KEY || '';
 const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL  || 'support@primealphasecurities.com';
 const IR_EMAIL      = process.env.IR_EMAIL       || 'ir@primealphasecurities.com';
-const FROM_EMAIL    = 'noreply@primealphasecurities.com';
+const FROM_EMAIL    = 'aurel.botouli@primealphasecurities.com';
 const DIST          = path.join(__dirname, 'dist');
 
 // ── AWS DynamoDB client (IAM role via EC2 IMDS — no keys needed) ──────────────
@@ -106,7 +106,7 @@ async function sendEmail({ to, subject, html, text }) {
   }
 
   const payload = {
-    from:    `Prime Alpha Securities <${FROM_EMAIL}>`,
+    from:    '${FROM_EMAIL}', // Verified sender email in Resend
     to:      toList,
     subject: subject,
     html:    html,
