@@ -33,7 +33,6 @@ const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL     || 'support@primealphasecuri
 const IR_EMAIL      = process.env.IR_EMAIL          || 'ir@primealphasecurities.com';
 const FROM_EMAIL    = 'aurel.botouli@primealphasecurities.com';
 const DIST          = path.join(__dirname, 'dist');
-const DIST         = path.join(__dirname, 'dist');
 
 // ── AWS clients — all use EC2 IAM role automatically ─────────────────────────
 const ddb = new DynamoDBClient({ region: REGION });
