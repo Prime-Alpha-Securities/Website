@@ -120,9 +120,10 @@ StandardOutput=append:${APP_DIR}/server.log
 StandardError=append:${APP_DIR}/server.log
 Environment=NODE_ENV=production
 Environment=PORT_HTTP=80
-Environment=PORT_HTTPS=443
 Environment=AWS_REGION=eu-west-2
 Environment=RESEND_API_KEY=re_Lqr36fGo_8Ev76CnuytPPVaXdXWRY6Z6W
+Environment=SUPPORT_EMAIL=support@primealphasecurities.com
+Environment=IR_EMAIL=ir@primealphasecurities.com
 
 [Install]
 WantedBy=multi-user.target
