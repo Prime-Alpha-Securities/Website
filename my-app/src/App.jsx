@@ -1052,7 +1052,7 @@ function WhoWeAre({sub}){
       en:{h:"Civic Priorities",body:"We believe flexible capital carries civic responsibility. The capital market failure we exist to correct is not a generic 'Africa needs capital' story — it is a specific diagnosis of where the system fails and why. Our priorities are built from that diagnosis.",
         civics:[
           ["We are dedicated problem solvers committed to driving impact within our firm and across our communities. By giving our time, talent and expertise, we are working to advance opportunity and improve lives."]
-        ]}
+        ]},
       fr:{h:"Priorités Civiques",body:"Nous croyons que le capital flexible porte une responsabilité civique. La défaillance du marché des capitaux que nous existons pour corriger n'est pas une histoire générique — c'est un diagnostic précis de l'endroit où le système échoue et pourquoi.",
         civics:[
           ["Le Maillon Manquant","Les entreprises générant 500 K$–10 M$ de chiffre d'affaires annuel, employant 20 à 200 personnes, et nécessitant des capitaux de croissance de 500 K$ à 15 M$ n'ont pas de foyer institutionnel. Trop grandes pour la microfinance, trop informelles pour le PE institutionnel."],
@@ -1347,15 +1347,15 @@ function FundTerms(){
         "A company approaching acquisition readiness needs bridge equity and valuation support — provide convertible notes with strategic rights.",
       ],
       howTitle:"How the Fund Works",
-      steps:[
+      steps:[[
         "Each strategy operates under its own mandate with a dedicated team — PE, Private Credit, Commodities, and Real Estate each have distinct investment processes.",
         "Capital calls are deployed across strategies based on mandate and opportunity set. Investors may participate in one or more fund verticals.",
         "Performance is calculated per fund. An 'eat what you kill' culture means every deal team is directly accountable for the returns they generate.",
         "Minimum investment levels and co-investment opportunities are available on a case-by-case basis. Contact us to discuss your allocation.",
       ],
         ["2025", "Foundation",  "Multi-strategy fund formalised. First institutional-quality track record established with zero outside capital."],
-        ["2026", "Scale",       "Four active strategies running simultaneously. Real Estate fundraise launched in the United States."],
-        ["2027 onward", "TBC",  "Milestones and targets for subsequent years are being formalised and will be published once confirmed."],
+        ["2026", "Scale",       "Four active strategies running simultaneously. Real Estate fundraise launched in the United States."]
+        ["2027 onward", "TBC",  "Milestones and targets for subsequent years are being formalised and will be published once confirmed."]
       ],
       cta:"Get In Touch",
     },
@@ -1372,7 +1372,7 @@ function FundTerms(){
         "Une entreprise approchant de l'acquisition a besoin d'equity bridge — nous fournissons des billets convertibles avec droits stratégiques.",
       ],
       howTitle:"Comment Fonctionne le Fonds",
-      steps:[
+      steps:[[
         "Chaque stratégie opère sous son propre mandat avec une équipe dédiée — PE, Crédit Privé, Matières Premières et Immobilier ont chacun leurs propres processus d'investissement.",
         "Les capital calls sont déployés selon le mandat et les opportunités. Les investisseurs participent à un ou plusieurs fonds verticaux.",
         "Les commissions de performance sont calculées par fonds. La culture 'on mange ce qu'on chasse' signifie que chaque équipe est comptable des rendements générés.",
@@ -1380,8 +1380,8 @@ function FundTerms(){
       ],
         ["2025", "Fondation",        "Fonds multi-stratégies formalisé. Premier track record de qualité institutionnelle établi sans capital extérieur."],
         ["2026", "Montée en Échelle","Quatre stratégies actives simultanément. Lancement de la levée immobilière aux États-Unis."],
-        ["2027 et au-delà", "TBC",   "Les jalons et objectifs des années suivantes sont en cours de formalisation et seront publiés une fois confirmés."],
-      ],
+        ["2027 et au-delà", "TBC",   "Les jalons et objectifs des années suivantes sont en cours de formalisation et seront publiés une fois confirmés."],]
+      ,
       cta:"Nous Contacter",
     },
   };
@@ -1428,7 +1428,6 @@ function FundTerms(){
     </div>
   );
 }
-
 // ─────────────────────────────────────────────────────────────────────────────
 //  CAREERS
 // ─────────────────────────────────────────────────────────────────────────────
