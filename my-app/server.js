@@ -272,6 +272,34 @@ async function notifyWorkerEmail(data) {
   await sendEmail({ to: data.to, subject: data.subject, html, text: data.body });
 }
 
+// POST /api/notify/apply — career application with optional file attachments
+async function notifyApply(data) {
+  const attachments = [];
+  if (data.cvFile)    attachments.push({ filename: data.cvFileName || 'cv.pdf',           content: data.cvFile });
+  if (data.clFile)    attachments.push({ filename: data.clFileName || 'cover-letter.pdf', content: data.clFile });
+  const html = wrapHtml('New Career Application', `
+    <h2 style="font-family:sans-serif;font-size:20px;color:#0B0F1A;margin:0 0 20px">New Application: ${data.role}</h2>
+    <table style="width:100%;border-collapse:collapse">
+      ${row('Name',  data.name)}
+      ${row('Email', data.email)}
+      ${row('Phone', data.phone || '—')}
+      ${row('Role',  data.role)}
+    </table>
+    <div style="padding:20px;background:#F7F8FA;border-radius:6px;margin-top:20px">
+      <p style="font-size:13px;font-weight:700;color:#0B0F1A;margin:0 0 10px">Cover Letter / Message:</p>
+      <p style="font-size:14px;color:#475569;line-height:1.75;margin:0">${(data.message || '—').replace(/\n/g, '<br>')}</p>
+    </div>
+    <p style="color:#64748B;font-size:12px;margin-top:16px">${attachments.length} file(s) attached.</p>
+    ${ctaButton('Reply to Applicant', 'mailto:' + data.email)}
+  `);
+  await sendEmail({
+    to: 'careers@primealphasecurities.com',
+    subject: `[PAS Careers] ${data.role} — ${data.name}`,
+    html,
+    text: `Application for ${data.role}\nFrom: ${data.name} (${data.email})\nPhone: ${data.phone || '—'}\n\n${data.message || ''}`,
+  });
+}
+
 // ── Notification router (/api/notify/<type>) ─────────────────────────────────
 async function handleNotify(req, res) {
   if (req.method !== 'POST') return jsonRes(res, 405, { error: 'POST only' });
@@ -282,6 +310,7 @@ async function handleNotify(req, res) {
     else if (type === 'credit')       await notifyCredit(data);
     else if (type === 'calendar')     await notifyCalendar(data);
     else if (type === 'worker-email') await notifyWorkerEmail(data);
+    else if (type === 'apply')        await notifyApply(data);
     else return jsonRes(res, 404, { error: `Unknown notify type: ${type}` });
     jsonRes(res, 200, { ok: true });
   } catch (e) {

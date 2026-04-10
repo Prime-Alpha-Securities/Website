@@ -39,6 +39,17 @@ const IS_PUBLIC   = true;
 const LangCtx = createContext(["en", ()=>{}]);
 const useLang = () => useContext(LangCtx);
 
+function useScrollAnimation(){
+  useEffect(()=>{
+    const obs=new IntersectionObserver(
+      entries=>entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('animate-in');obs.unobserve(e.target);}}),
+      {threshold:0.1,rootMargin:'0px 0px -40px 0px'}
+    );
+    document.querySelectorAll('[data-animate]').forEach(el=>obs.observe(el));
+    return()=>obs.disconnect();
+  });
+}
+
 // ── URL path → page name map ──────────────────────────────────────────────────
 const ROUTES = {
   "/":                 "home",
@@ -47,6 +58,8 @@ const ROUTES = {
   "/culture":          "Culture",
   "/leadership":       "Leadership",
   "/civic-priorities": "Civic Priorities",
+  "/our-story":        "Our Story",
+  "/investors":        "Investors",
   "/what-we-do":       "What We Do",
   "/private-equity":   "Private Equity",
   "/private-credit":   "Private Credit",
@@ -408,6 +421,21 @@ input, textarea, select { font-family: inherit; }
   .stat-grid   { grid-template-columns: 1fr 1fr !important; }
   .hide-sm     { display: none !important; }
 }
+/* Scroll animations — IntersectionObserver driven */
+[data-animate]{opacity:0;transform:translateY(20px);transition:opacity 0.6s ease,transform 0.6s ease}
+[data-animate].animate-in{opacity:1;transform:translateY(0)}
+[data-animate][data-delay="1"]{transition-delay:0.1s}
+[data-animate][data-delay="2"]{transition-delay:0.2s}
+[data-animate][data-delay="3"]{transition-delay:0.3s}
+[data-animate][data-delay="4"]{transition-delay:0.4s}
+[data-animate][data-delay="5"]{transition-delay:0.5s}
+.card-hover{transition:transform 0.3s ease,box-shadow 0.3s ease}
+.card-hover:hover{transform:translateY(-4px);box-shadow:var(--sh-lg)}
+.btn-animate{transition:transform 0.2s ease}
+.btn-animate:hover{transform:scale(1.02)}
+.btn-animate:active{transform:scale(0.98)}
+*{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+input,button,select{-webkit-appearance:none}
 `;
 
 
@@ -656,6 +684,7 @@ function PublicNav(){
     {label:"What We Do",items:["Overview","Private Equity","Private Credit","Commodities","Real Estate"]},
     {label:"Fund Terms",items:[]},
     {label:"Research",items:[]},
+    {label:"Investors",items:[]},
     {label:"Contact",items:[]},
   ];
   return(
@@ -752,34 +781,45 @@ function PublicNav(){
 // ─────────────────────────────────────────────────────────────────────────────
 function PublicFooter(){
   const [lang]=useLang();
-  const navLinks=lang==="en"
-    ?[["Company",["Overview","Our Story","The Team","Civic Priorities","Research"]],
-      ["Capital Solutions",["Private Equity","Private Credit","Commodities","Real Estate"]],
-      ["Legal",["Privacy","Terms","Notices","Disclosures"]]]
-    :[["Entreprise",["Overview","Our Story","The Team","Civic Priorities","Research"]],
-      ["Stratégies",["Private Equity","Private Credit","Commodities","Real Estate"]],
-      ["Légal",["Privacy","Terms","Notices","Disclosures"]]];
+  const col=(h,items)=>(
+    <div key={h}>
+      <div style={{fontSize:10,fontWeight:700,letterSpacing:"0.14em",textTransform:"uppercase",color:"var(--blue)",marginBottom:16}}>{h}</div>
+      {items.map(([label,page])=>(
+        <button key={label} onClick={()=>navigate(page)} style={{display:"block",color:"rgba(255,255,255,0.5)",fontSize:13,marginBottom:9,background:"none",transition:"color 0.15s",textAlign:"left"}}
+          onMouseEnter={e=>e.currentTarget.style.color="#fff"}
+          onMouseLeave={e=>e.currentTarget.style.color="rgba(255,255,255,0.5)"}>{label}</button>
+      ))}
+    </div>
+  );
+  const en=[
+    [lang==="en"?"Company":"Entreprise",[["Our Story","Our Story"],["Who We Are","Overview"],["The Team","The Team"],["Civic Priorities","Civic Priorities"],["Careers","Careers"]]],
+    [lang==="en"?"Capital Solutions":"Stratégies",[["Private Equity","Private Equity"],["Private Credit","Private Credit"],["Real Estate","Real Estate"],["Commodities","Commodities"],["Fund Terms","Fund Terms"]]],
+    [lang==="en"?"Resources":"Ressources",[["Research","Research"],["Investors","Investors"],["Privacy","Privacy"],["Terms","Terms"],["Notices","Notices"],["Disclosures","Disclosures"]]],
+  ];
   return(
     <footer style={{background:"var(--head)",color:"rgba(255,255,255,0.65)"}}>
       <div className="px-page" style={{maxWidth:1300,margin:"0 auto",padding:"60px 40px 32px"}}>
         <div className="rg-ft" style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr",gap:48,marginBottom:48}}>
           <div>
             <div style={{marginBottom:16}}><Logo height={32} dark/></div>
+            <p style={{fontSize:13,color:"rgba(255,255,255,0.4)",lineHeight:1.8,maxWidth:260,marginBottom:20}}>
+              {lang==="en"
+                ?"Pan-African alternative investment management. Flexible capital across Private Equity, Private Credit, Commodities, and Real Estate."
+                :"Gestion d'investissements alternatifs panafricaine. Capitaux flexibles en Private Equity, Crédit Privé, Matières Premières et Immobilier."}
+            </p>
+            <a href="https://www.linkedin.com/company/prime-alpha-securities" target="_blank" rel="noopener noreferrer"
+              style={{display:"inline-flex",alignItems:"center",gap:8,color:"rgba(255,255,255,0.5)",fontSize:12,textDecoration:"none",transition:"color 0.15s"}}
+              onMouseEnter={e=>e.currentTarget.style.color="#fff"}
+              onMouseLeave={e=>e.currentTarget.style.color="rgba(255,255,255,0.5)"}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+              LinkedIn
+            </a>
           </div>
-          {navLinks.map(([h,items])=>(
-            <div key={h}>
-              <div style={{fontSize:10,fontWeight:700,letterSpacing:"0.14em",textTransform:"uppercase",color:"var(--blue)",marginBottom:16}}>{h}</div>
-              {items.map(i=>(
-                <button key={i} onClick={()=>navigate(i)} style={{display:"block",color:"rgba(255,255,255,0.5)",fontSize:13,marginBottom:9,background:"none",transition:"color 0.15s"}}
-                  onMouseEnter={e=>e.currentTarget.style.color="#fff"}
-                  onMouseLeave={e=>e.currentTarget.style.color="rgba(255,255,255,0.5)"}>{i}</button>
-              ))}
-            </div>
-          ))}
+          {en.map(([h,items])=>col(h,items))}
         </div>
-        <div style={{borderTop:"1px solid rgba(255,255,255,0.08)",paddingTop:24,display:"flex",justifyContent:"space-between",fontSize:12}}>
-          <span>© {new Date().getFullYear()} Prime Alpha Securities. {lang==="en"?"All rights reserved.":"Tous droits réservés."}</span>
-          <span>{DOMAIN} · CEMAC · West Africa · USA</span>
+        <div style={{borderTop:"1px solid rgba(255,255,255,0.08)",paddingTop:24,display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:12,flexWrap:"wrap",gap:8}}>
+          <span>© 2025 Prime Alpha Securities Ltd. {lang==="en"?"All rights reserved.":"Tous droits réservés."}</span>
+          <span style={{color:"rgba(255,255,255,0.35)"}}>{DOMAIN} · CEMAC · West Africa · USA</span>
         </div>
       </div>
     </footer>
@@ -1049,9 +1089,12 @@ function WhoWeAre({sub}){
         ]},
     },
     "Civic Priorities":{
-      en:{h:"Civic Priorities",body:"We believe flexible capital carries civic responsibility. The capital market failure we exist to correct is not a generic 'Africa needs capital' story — it is a specific diagnosis of where the system fails and why. Our priorities are built from that diagnosis.",
+      en:{h:"Civic Priorities",body:"We believe that flexible capital carries civic responsibility. The capital market failure we aim to correct is not a generic story — it is a specific diagnosis of where the system fails and why. Our civic priorities grow directly from that diagnosis.",
         civics:[
-          ["We are dedicated problem solvers committed to driving impact within our firm and across our communities. By giving our time, talent and expertise, we are working to advance opportunity and improve lives."]
+          ["The Missing Middle","One of our goals is to become the institutional home for companies that generate between $500K and $10M in annual revenue, employ 20 to 200 people, and need $500K to $15M in growth capital. We want to build the infrastructure that closes this gap — one investment at a time."],
+          ["Financial Inclusion as Infrastructure","We are committed to treating access to patient capital as infrastructure, not a luxury. We believe 57% of Africa's population being unbanked is not a cultural fact — it is a structural failure we intend to help correct through our private credit strategy."],
+          ["Local Presence, International Standards","We aim to maintain genuine physical presence in our target markets — not a flag on a map. We want to hire locally, build local networks, and hold ourselves to IFRS accounting and governance standards that institutional LPs can audit without friction."],
+          ["Technology as a Civic Lever","We are committed to building proprietary technology that makes African deal-making more transparent, more efficient, and more scalable. We believe AI-driven due diligence is not a luxury for frontier markets — it is a prerequisite for doing this at scale."],
         ]},
       fr:{h:"Priorités Civiques",body:"Nous croyons que le capital flexible porte une responsabilité civique. La défaillance du marché des capitaux que nous existons pour corriger n'est pas une histoire générique — c'est un diagnostic précis de l'endroit où le système échoue et pourquoi.",
         civics:[
@@ -1079,6 +1122,12 @@ function WhoWeAre({sub}){
         </div>}
         {d.pillars&&d.pillars.map(([t,desc])=>(
           <div key={t} style={{...T.card,marginBottom:14,borderLeft:"3px solid var(--blue)"}}>
+            <h3 style={{...T.hdg,fontSize:18,marginBottom:8}}>{t}</h3>
+            <p style={{color:"var(--dim)",lineHeight:1.85}}>{desc}</p>
+          </div>
+        ))}
+        {d.civics&&d.civics.map(([t,desc])=>(
+          <div key={t} style={{...T.card,marginBottom:14,borderLeft:"3px solid var(--blue)"}} data-animate>
             <h3 style={{...T.hdg,fontSize:18,marginBottom:8}}>{t}</h3>
             <p style={{color:"var(--dim)",lineHeight:1.85}}>{desc}</p>
           </div>
@@ -1437,6 +1486,41 @@ function FundTerms(){
 function Careers() {
   const [lang] = useLang();
   const [selected, setSelected] = useState(null);
+  const [applyingFor, setApplyingFor] = useState(null);
+  const [applyData, setApplyData] = useState({name:"",email:"",phone:"",message:""});
+  const [cvFile, setCvFile] = useState(null);
+  const [clFile, setClFile] = useState(null);
+  const [applying, setApplying] = useState(false);
+  const [applySuccess, setApplySuccess] = useState(false);
+
+  const readFileB64 = (file) => new Promise((res,rej)=>{
+    if(!file) return res(null);
+    const r = new FileReader();
+    r.onload = ()=>res(r.result.split(",")[1]);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+
+  const submitApplication = async(role) => {
+    if(!applyData.name||!applyData.email){alert(lang==="en"?"Name and email are required.":"Nom et email requis.");return;}
+    setApplying(true);
+    try{
+      const cvB64 = await readFileB64(cvFile);
+      const clB64 = await readFileB64(clFile);
+      await fetch("/api/notify/apply",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          role:role.title, name:applyData.name, email:applyData.email,
+          phone:applyData.phone, message:applyData.message,
+          cvFile:cvB64, cvFileName:cvFile?.name,
+          clFile:clB64, clFileName:clFile?.name,
+        }),
+      });
+      setApplySuccess(true);
+    }catch(e){console.error(e);}
+    setApplying(false);
+  };
 
   // ── Values / culture points ───────────────────────────────────────────────
   const VALUES = {
@@ -1686,15 +1770,39 @@ function Careers() {
                   </div>
                 ))}
                 <div style={{ marginTop: 24 }}>
-                  <button
-                    style={T.btnP}
-                    onClick={() => {
-                      const sub = encodeURIComponent(`Application: ${role.title}`);
-                      window.location.href = `mailto:aurel.botouli@primealphasecurities.com?subject=${sub}`;
-                    }}
-                  >
-                    {lang === "en" ? "Apply for This Role" : "Postuler à ce Poste"}
-                  </button>
+                  {applyingFor !== role.id ? (
+                    <button style={T.btnP} onClick={()=>{setApplyingFor(role.id);setApplySuccess(false);setApplyData({name:"",email:"",phone:"",message:""});setCvFile(null);setClFile(null);}}>
+                      {lang === "en" ? "Apply for This Role" : "Postuler à ce Poste"}
+                    </button>
+                  ) : applySuccess ? (
+                    <div style={{padding:16,background:"#f0fdf4",border:"1px solid #bbf7d0",borderRadius:"var(--r)",color:"#15803d",fontSize:14}}>
+                      {lang==="en"?"Application submitted! We'll be in touch soon.":"Candidature envoyée ! Nous vous contacterons bientôt."}
+                    </div>
+                  ) : (
+                    <div style={{background:"var(--w)",border:"var(--bdr)",borderRadius:"var(--r)",padding:24,marginTop:8}}>
+                      <h4 style={{...T.hdg,fontSize:15,marginBottom:16}}>{lang==="en"?"Your Application":"Votre Candidature"}</h4>
+                      <div className="form-2col" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:0}}>
+                        <Inp label={lang==="en"?"Full Name *":"Nom Complet *"} value={applyData.name} onChange={e=>setApplyData(p=>({...p,name:e.target.value}))}/>
+                        <div style={{paddingLeft:16}}><Inp label={lang==="en"?"Email *":"Email *"} type="email" value={applyData.email} onChange={e=>setApplyData(p=>({...p,email:e.target.value}))}/></div>
+                      </div>
+                      <Inp label={lang==="en"?"Phone":"Téléphone"} value={applyData.phone} onChange={e=>setApplyData(p=>({...p,phone:e.target.value}))}/>
+                      <TA label={lang==="en"?"Cover Letter / Message":"Lettre de Motivation / Message"} value={applyData.message} onChange={e=>setApplyData(p=>({...p,message:e.target.value}))}/>
+                      <div style={{marginBottom:16}}>
+                        <label style={T.lbl}>{lang==="en"?"CV / Resume":"CV"}</label>
+                        <input type="file" accept=".pdf,.doc,.docx" onChange={e=>setCvFile(e.target.files[0]||null)} style={{fontSize:13,color:"var(--body)"}}/>
+                      </div>
+                      <div style={{marginBottom:20}}>
+                        <label style={T.lbl}>{lang==="en"?"Cover Letter (PDF, optional)":"Lettre de Motivation (PDF, optionnel)"}</label>
+                        <input type="file" accept=".pdf,.doc,.docx" onChange={e=>setClFile(e.target.files[0]||null)} style={{fontSize:13,color:"var(--body)"}}/>
+                      </div>
+                      <div style={{display:"flex",gap:12}}>
+                        <button style={T.btnP} onClick={()=>submitApplication(role)} disabled={applying}>
+                          {applying?(lang==="en"?"Sending…":"Envoi…"):(lang==="en"?"Submit Application":"Envoyer")}
+                        </button>
+                        <button style={T.btnG} onClick={()=>setApplyingFor(null)}>{lang==="en"?"Cancel":"Annuler"}</button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -1727,32 +1835,57 @@ function Careers() {
 }
 
 
+const RESEARCH_SEED=[
+  {articleId:"seed-1",category:"WAEMU & CEMAC Market Insights",title:"Capital Market Failure in Francophone Africa",excerpt:"A structural analysis of why traditional banks systematically under-serve mid-market companies in the CEMAC and WAEMU corridors, and what alternative capital providers can do differently.",date:"2026-03-15",author:"Noe Désiré Ikoué"},
+  {articleId:"seed-2",category:"WAEMU & CEMAC Market Insights",title:"The Missing Middle: Sizing the Opportunity",excerpt:"Companies with $500K–$10M in annual revenue represent the backbone of economic growth in West Africa, yet access only 12% of available institutional credit. We quantify the gap.",date:"2026-02-20",author:"Noe Désiré Ikoué"},
+  {articleId:"seed-3",category:"R&D Quick Notes",title:"AI-Assisted Due Diligence: Field Notes from CEMAC",excerpt:"Early observations from deploying large language models to accelerate due diligence in markets with limited formal data. What works, what fails, and what we are building next.",date:"2026-03-01",author:"Johan A. Botouli"},
+  {articleId:"seed-4",category:"R&D Quick Notes",title:"Building Infrastructure for Frontier Market Deal Flow",excerpt:"A technical overview of the proprietary data pipelines and screening tools we have built to source and evaluate deals in markets where Bloomberg doesn't reach.",date:"2026-01-10",author:"Johan A. Botouli"},
+  {articleId:"seed-5",category:"International Trade Correlations",title:"CEMAC–Asia Commodity Trade Flows: 2025 Review",excerpt:"How shifting demand from Chinese buyers is reshaping agricultural and textile commodity pricing across the CEMAC corridor, and what traders and investors should watch in 2026.",date:"2026-02-28",author:"Balde Ibrahima"},
+  {articleId:"seed-6",category:"International Trade Correlations",title:"Cross-Border Livestock Markets: Arbitrage and Risk",excerpt:"Physical commodity arbitrage opportunities across the Chad–Cameroon–Nigeria corridor — structural pricing inefficiencies and how we are deploying capital to capture them.",date:"2025-11-15",author:"Balde Ibrahima"},
+  {articleId:"seed-7",category:"Market Direction",title:"African Private Equity: Vintage 2026 Outlook",excerpt:"With global LPs increasingly looking beyond Asia and Latin America, we assess which African markets are positioned to absorb meaningful institutional capital over the next 24 months.",date:"2026-03-20",author:"Noe Désiré Ikoué"},
+  {articleId:"seed-8",category:"Market Direction",title:"Private Credit Spreads in West Africa: A Primer",excerpt:"Direct lending to mid-market West African companies currently prices at 18–28% all-in cost of capital. We explain why, and where spreads are likely to compress first.",date:"2026-01-25",author:"Noe Désiré Ikoué"},
+  {articleId:"seed-9",category:"Shift Towards AI",title:"The Case for AI-Native Investment Operations",excerpt:"Traditional fund operations — from LP reporting to compliance monitoring — are built for a world of scarce data and expensive analysis. AI changes both assumptions. We explain how we are rebuilding from scratch.",date:"2026-03-10",author:"Johan A. Botouli"},
+  {articleId:"seed-10",category:"Shift Towards AI",title:"Generative AI in Financial Due Diligence: Risks and Rewards",excerpt:"We test five leading LLMs against a real CEMAC credit application. Accuracy, hallucination rate, and practical utility — a frank assessment from a team that has moved from experimentation to deployment.",date:"2026-02-05",author:"Johan A. Botouli"},
+];
+
 function Research(){
   const [lang]=useLang();
   const [articles,sa]=useState([]);
   const [loading,sl]=useState(true);
   const [active,sact]=useState(null);
-  useEffect(()=>{api.getAll("articles").then(r=>{sa([...r].sort((a,b)=>b.date.localeCompare(a.date)));sl(false);});},[]);
+  const [catFilter,setCatFilter]=useState("All");
+  useEffect(()=>{api.getAll("articles").then(r=>{const sorted=[...r].sort((a,b)=>b.date.localeCompare(a.date));sa(sorted.length>0?sorted:RESEARCH_SEED);sl(false);});},[]);
   return(
     <div>
       <PageHero eyebrow={lang==="en"?"Perspectives":"Perspectives"} title={lang==="en"?"RESEARCH & INSIGHTS":"RECHERCHE & ANALYSES"}/>
       <div style={{maxWidth:1100,margin:"0 auto",padding:"64px max(16px,4vw)"}}>
         {loading?<Spinner/>:(
-          <div className="rg-2" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
-            {articles.map((a,i)=>(
-              <div key={a.articleId} className={`fu fu-${Math.min(i+1,4)}`} onClick={()=>sact(a)} style={{...T.card,cursor:"pointer",display:"flex",flexDirection:"column",transition:"all 0.2s"}}
-                onMouseEnter={e=>{e.currentTarget.style.boxShadow="var(--sh-md)";e.currentTarget.style.borderColor="var(--blue)";}}
-                onMouseLeave={e=>{e.currentTarget.style.boxShadow="var(--sh)";e.currentTarget.style.borderColor="#DDDFE5";}}>
-                <div style={{display:"flex",justifyContent:"space-between",marginBottom:12}}>
-                  <span style={T.tag()}>{a.category}</span>
-                  <span style={{fontSize:11,color:"var(--dim)",fontFamily:"var(--ff-m)"}}>{a.date}</span>
+          <>
+            {/* Category filter */}
+            <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:32}}>
+              {["All",...[...new Set(articles.map(a=>a.category))]].map(cat=>(
+                <button key={cat} onClick={()=>setCatFilter(cat)}
+                  style={{...T.btnG,fontSize:12,padding:"7px 14px",background:catFilter===cat?"var(--blue)":"transparent",color:catFilter===cat?"#fff":"var(--dim)",borderColor:catFilter===cat?"var(--blue)":"var(--mg)",transition:"all 0.15s"}}>
+                  {cat}
+                </button>
+              ))}
+            </div>
+            <div className="rg-2" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
+              {articles.filter(a=>catFilter==="All"||a.category===catFilter).map((a,i)=>(
+                <div key={a.articleId} className={`fu fu-${Math.min(i+1,4)}`} onClick={()=>sact(a)} style={{...T.card,cursor:"pointer",display:"flex",flexDirection:"column",transition:"all 0.2s"}} data-animate data-delay={String(Math.min(i%4+1,5))}
+                  onMouseEnter={e=>{e.currentTarget.style.boxShadow="var(--sh-md)";e.currentTarget.style.borderColor="var(--blue)";}}
+                  onMouseLeave={e=>{e.currentTarget.style.boxShadow="var(--sh)";e.currentTarget.style.borderColor="#DDDFE5";}}>
+                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:12}}>
+                    <span style={T.tag()}>{a.category}</span>
+                    <span style={{fontSize:11,color:"var(--dim)",fontFamily:"var(--ff-m)"}}>{a.date}</span>
+                  </div>
+                  <h3 style={{...T.hdg,fontSize:19,lineHeight:1.3,marginBottom:10,flex:1}}>{a.title}</h3>
+                  <p style={{fontSize:13,color:"var(--dim)",lineHeight:1.75,marginBottom:12}}>{a.excerpt}</p>
+                  <div style={{fontSize:12,color:"var(--dim)"}}>{a.author}</div>
                 </div>
-                <h3 style={{...T.hdg,fontSize:19,lineHeight:1.3,marginBottom:10,flex:1}}>{a.title}</h3>
-                <p style={{fontSize:13,color:"var(--dim)",lineHeight:1.75,marginBottom:12}}>{a.excerpt}</p>
-                <div style={{fontSize:12,color:"var(--dim)"}}>{a.author}</div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
       <Modal open={!!active} onClose={()=>sact(null)} title={active?.title||""}>
@@ -2972,6 +3105,108 @@ function WWorkers({workers,addWorker,updateWorker,removeWorker,showToast}){
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+//  INVESTORS PAGE
+// ─────────────────────────────────────────────────────────────────────────────
+function Investors(){
+  const [lang]=useLang();
+  const why=lang==="en"
+    ?[
+      {icon:"◆",t:"Patient Capital",d:"We deploy capital on a 3–7 year horizon, aligned with the real operating cycles of African businesses. No artificial urgency, no forced exits."},
+      {icon:"◆",t:"Pan-African Coverage",d:"Active presence across CEMAC and West African markets, with a growing U.S. Real Estate platform. Four strategies, one integrated framework."},
+      {icon:"◆",t:"Verifiable Track Record",d:"153.7% blended return across all capital ever deployed. Auditable. No outside capital for the first 11 months of operation."},
+      {icon:"◆",t:"Institutional Standards",d:"IFRS accounting, quarterly LP reporting, IC-level governance, and zero-tolerance compliance policies — regardless of market informality."},
+    ]
+    :[
+      {icon:"◆",t:"Capital Patient",d:"Nous déployons des capitaux sur un horizon de 3 à 7 ans, aligné sur les cycles opérationnels réels des entreprises africaines."},
+      {icon:"◆",t:"Couverture Panafricaine",d:"Présence active en CEMAC et Afrique de l'Ouest, avec une plateforme Immobilier en croissance aux États-Unis."},
+      {icon:"◆",t:"Historique Vérifiable",d:"153,7% de rendement pondéré sur l'ensemble des capitaux déployés. Auditable. Sans capital extérieur durant les 11 premiers mois."},
+      {icon:"◆",t:"Standards Institutionnels",d:"Comptabilité IFRS, reporting LP trimestriel, gouvernance IC, et politiques de conformité à tolérance zéro."},
+    ];
+  const strategies=lang==="en"
+    ?[["Private Equity","PE","Controlling stakes in African mid-market businesses. 3–7yr hold.","Private Equity"],
+      ["Private Credit","PC","Direct lending to under-banked West African companies. Zero drawdowns to date.","Private Credit"],
+      ["Real Estate","RE","U.S. residential and multifamily. Fix-and-flip, buy-and-hold. Currently fundraising.","Real Estate"],
+      ["Commodities","COM","Physical commodity trading across textiles, agriculture, livestock. CEMAC corridor.","Commodities"]]
+    :[["Private Equity","PE","Participations dans les PME africaines. Horizon 3–7 ans.","Private Equity"],
+      ["Crédit Privé","PC","Prêts directs aux PME non servies par les banques. Zéro défaut à ce jour.","Private Credit"],
+      ["Immobilier","RE","Résidentiel et multifamilial aux États-Unis. En levée de fonds.","Real Estate"],
+      ["Matières Premières","COM","Commerce de matières premières physiques en CEMAC.","Commodities"]];
+  return(
+    <div>
+      <PageHero eyebrow={lang==="en"?"For Investors":"Pour les Investisseurs"} title={lang==="en"?"PARTNER WITH US":"INVESTISSEZ AVEC NOUS"}
+        body={lang==="en"?"Prime Alpha Securities is open to qualified institutional and family office investors who share our conviction that African private markets represent a generational opportunity.":"Prime Alpha Securities est ouvert aux investisseurs institutionnels qualifiés et aux family offices qui partagent notre conviction que les marchés privés africains représentent une opportunité générationnelle."}/>
+      <div style={{maxWidth:960,margin:"0 auto",padding:"64px max(16px,4vw)"}}>
+
+        {/* Why Prime Alpha */}
+        <div style={{marginBottom:56}}>
+          <h2 style={{...T.hdg,fontSize:26,marginBottom:8}}>{lang==="en"?"Why Prime Alpha":"Pourquoi Prime Alpha"}</h2>
+          <p style={{color:"var(--dim)",marginBottom:32,lineHeight:1.8}}>{lang==="en"?"Four reasons institutional investors choose us as their partner in African private markets.":"Quatre raisons pour lesquelles les investisseurs institutionnels nous choisissent comme partenaires."}</p>
+          <div className="rg-2" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
+            {why.map((w,i)=>(
+              <div key={w.t} style={{...T.card,borderTop:"3px solid var(--blue)"}} data-animate data-delay={String(i+1)}>
+                <div style={{fontSize:10,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:"var(--blue)",marginBottom:10}}>{w.icon} {w.t}</div>
+                <p style={{color:"var(--dim)",fontSize:13,lineHeight:1.8}}>{w.d}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Fund Strategies */}
+        <div style={{marginBottom:56}}>
+          <h2 style={{...T.hdg,fontSize:26,marginBottom:32}}>{lang==="en"?"Fund Strategies":"Stratégies de Fonds"}</h2>
+          <div className="rg-2" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16}}>
+            {strategies.map(([name,code,desc,page],i)=>(
+              <div key={code} style={{...T.card,cursor:"pointer",borderLeft:"3px solid var(--blue)",transition:"box-shadow 0.15s"}} data-animate data-delay={String(i+1)}
+                onClick={()=>navigate(page)}
+                onMouseEnter={e=>e.currentTarget.style.boxShadow="var(--sh-md)"}
+                onMouseLeave={e=>e.currentTarget.style.boxShadow="var(--sh)"}>
+                <div style={{fontSize:11,fontWeight:700,letterSpacing:"0.12em",color:"var(--blue)",marginBottom:8}}>{code}</div>
+                <h3 style={{...T.hdg,fontSize:17,marginBottom:8}}>{name}</h3>
+                <p style={{fontSize:13,color:"var(--dim)",lineHeight:1.75,marginBottom:10}}>{desc}</p>
+                <span style={{fontSize:12,color:"var(--blue)",fontWeight:700}}>{lang==="en"?"View strategy →":"Voir la stratégie →"}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Investor Qualifications */}
+        <div style={{...T.card,marginBottom:40,borderLeft:"3px solid var(--blue)"}}>
+          <h2 style={{...T.hdg,fontSize:22,marginBottom:16}}>{lang==="en"?"Investor Qualifications":"Qualifications des Investisseurs"}</h2>
+          {(lang==="en"
+            ?["Qualified institutional investors (pension funds, endowments, insurance companies, sovereign wealth funds)",
+              "Family offices with $5M+ in investable assets and a minimum 3-year investment horizon",
+              "High-net-worth individuals meeting accredited investor standards in their respective jurisdiction",
+              "Strategic co-investors with sector expertise in African private markets"]
+            :["Investisseurs institutionnels qualifiés (fonds de pension, dotations, compagnies d'assurance, fonds souverains)",
+              "Family offices avec 5M$+ d'actifs investissables et un horizon d'investissement minimum de 3 ans",
+              "Particuliers fortunés répondant aux critères d'investisseur accrédité dans leur juridiction",
+              "Co-investisseurs stratégiques avec expertise sectorielle dans les marchés privés africains"]
+          ).map((q,i)=>(
+            <div key={i} style={{display:"flex",gap:12,marginBottom:12}}>
+              <div style={{width:6,height:6,borderRadius:"50%",background:"var(--blue)",flexShrink:0,marginTop:8}}/>
+              <p style={{color:"var(--body)",fontSize:14,lineHeight:1.75,margin:0}}>{q}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* IR Contact */}
+        <div style={{...T.card,textAlign:"center",marginBottom:40,borderTop:"3px solid var(--blue)"}}>
+          <h2 style={{...T.hdg,fontSize:22,marginBottom:8}}>{lang==="en"?"Investor Relations":"Relations Investisseurs"}</h2>
+          <p style={{color:"var(--dim)",marginBottom:20,lineHeight:1.8,maxWidth:480,margin:"0 auto 20px"}}>{lang==="en"?"For fund documentation, due diligence requests, or to schedule a call with our IR team, reach out directly.":"Pour la documentation des fonds, les demandes de due diligence, ou pour planifier un appel avec notre équipe IR, contactez-nous directement."}</p>
+          <a href="mailto:ir@primealphasecurities.com" style={{...T.btnP,display:"inline-block",textDecoration:"none"}}>ir@primealphasecurities.com</a>
+        </div>
+
+        {/* CTA */}
+        <div style={{textAlign:"center",padding:"40px 0"}}>
+          <p style={{color:"var(--dim)",marginBottom:20,fontSize:15}}>{lang==="en"?"Ready to explore a partnership?":"Prêt à explorer un partenariat ?"}</p>
+          <button style={T.btnP} onClick={()=>navigate("Contact")}>{lang==="en"?"Get In Touch":"Nous Contacter"}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 //  APP ROOT — URL-aware router
 // ─────────────────────────────────────────────────────────────────────────────
 export default function App(){
@@ -2979,6 +3214,7 @@ export default function App(){
   const [investorUser,siu]=useState(null);
   const [workerUser,swu]=useState(null);
   const [lang,setLang]=useState("en");
+  useScrollAnimation();
 
   // Inject global styles
   useEffect(()=>{
@@ -3023,7 +3259,9 @@ export default function App(){
       case"Culture":          return<WhoWeAre sub="Culture"/>;
       case"Leadership":       return<WhoWeAre sub="The Team"/>;
       case"Civic Priorities": return<WhoWeAre sub="Civic Priorities"/>;
+      case"Our Story":        return<WhoWeAre sub="Our Story"/>;
       case"Who We Are":       return<WhoWeAre sub="Overview"/>;
+      case"Investors":        return<Investors/>;
       case"What We Do":       return<WhatWeDo sub="Overview"/>;
       case"Private Equity":   return<WhatWeDo sub="Private Equity"/>;
       case"Private Credit":   return<WhatWeDo sub="Private Credit"/>;
