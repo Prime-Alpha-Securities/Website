@@ -26,3 +26,4 @@ terraform/.terraform.lock.hcl
 
 # Ignore Terraform provider binaries (adjust paths as needed)
 terraform/.terraform/providers/
+*:Zone.Identifier
