@@ -31,7 +31,7 @@ jobs:
         run: npx eslint src/ --ext .js,.jsx --max-warnings 100 || true
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Stage 2 — Build  (Vite smoke test)
+# Stage 2 — Build frontend in CI, upload dist/ as artifact
 # ─────────────────────────────────────────────────────────────────────────────
   build:
     name: Build
@@ -50,10 +50,17 @@ jobs:
       - name: Vite build
         working-directory: my-app
         run: npm run build
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: my-app/dist/
+          retention-days: 1
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Stage 3 — Deploy to EC2  (main branch only)
-# Requires: port 22 open in EC2 Security Group for 0.0.0.0/0
+# Syncs source + pre-built dist/ → EC2, installs server deps, restarts node
+# No build step on EC2 — Vite is not required there
 # ─────────────────────────────────────────────────────────────────────────────
   deploy:
     name: Deploy to EC2
@@ -68,43 +75,41 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Download built dist/
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: my-app/dist/
+
       - name: Fix key permissions
         run: chmod 600 "$KEY"
 
-      - name: Test SSH connectivity
-        run: |
-          ssh -i "$KEY" \
-            -o StrictHostKeyChecking=no \
-            -o ConnectTimeout=15 \
-            -o BatchMode=yes \
-            $EC2_USER@$EC2_HOST "echo SSH OK" \
-          || { echo "❌ SSH failed — ensure port 22 is open in the EC2 Security Group for 0.0.0.0/0"; exit 1; }
-
-      - name: Sync files to EC2
+      - name: Sync source + dist to EC2
         run: |
           rsync -az \
             --exclude node_modules \
             --exclude .git \
-            --exclude dist \
             -e "ssh -i $KEY -o StrictHostKeyChecking=no -o ConnectTimeout=15" \
             my-app/ \
             $EC2_USER@$EC2_HOST:$APP_DIR/
 
-      - name: Install, build and restart on EC2
+      - name: Install server deps and restart on EC2
         run: |
-          ssh -i "$KEY" -o StrictHostKeyChecking=no -o ConnectTimeout=15 $EC2_USER@$EC2_HOST "
+          ssh -i "$KEY" -o StrictHostKeyChecking=no -o ConnectTimeout=15 $EC2_USER@$EC2_HOST << 'ENDSSH'
             set -e
-            cd $APP_DIR
-            echo '→ Installing dependencies...'
+            cd /home/ubuntu/Prime-Alpha-Securities/my-app
+            echo "→ Installing server dependencies..."
             npm ci --omit=dev
-            echo '→ Building frontend...'
-            npm run build
-            echo '→ Restarting server...'
-            sudo systemctl restart pas-website 2>/dev/null && echo '  systemctl OK' && exit 0
-            pm2 restart pas-website 2>/dev/null && echo '  pm2 OK' && exit 0
-            pkill -f 'node server.js' 2>/dev/null; sleep 1
-            nohup node server.js > /tmp/pas.log 2>&1 &
-            echo '  server started (nohup)'
-          "
-        env:
-          APP_DIR: /home/ubuntu/Prime-Alpha-Securities/my-app
+            echo "→ Restarting server..."
+            if sudo systemctl restart pas-website 2>/dev/null; then
+              echo "  ✓ systemctl restarted"
+            elif pm2 restart pas-website 2>/dev/null; then
+              echo "  ✓ pm2 restarted"
+            else
+              pkill -f "node server.js" 2>/dev/null || true
+              sleep 1
+              nohup node server.js > /tmp/pas.log 2>&1 &
+              echo "  ✓ server started via nohup (pid $!)"
+            fi
+            echo "Deploy complete."
+          ENDSSH
