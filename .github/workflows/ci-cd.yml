@@ -58,9 +58,15 @@ jobs:
           retention-days: 1
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Stage 3 — Deploy to EC2  (main branch only)
-# Syncs source + pre-built dist/ → EC2, installs server deps, restarts node
-# No build step on EC2 — Vite is not required there
+# Stage 3 — Deploy  (main branch only)
+# Syncs source + pre-built dist/ to EC2 via rsync (SSH), then calls the
+# /api/deploy webhook — no SSH needed after initial setup.
+#
+# One-time EC2 setup (SSH in once):
+#   1. Set DEPLOY_TOKEN=<your-secret> in the process env
+#      e.g. add to /etc/environment:  DEPLOY_TOKEN=pas-deploy-2026-k9x7m3
+#   2. Add DEPLOY_TOKEN secret to this GitHub repo (Settings → Secrets)
+#   3. After this, SSH port 22 can stay closed permanently.
 # ─────────────────────────────────────────────────────────────────────────────
   deploy:
     name: Deploy to EC2
@@ -93,23 +99,15 @@ jobs:
             my-app/ \
             $EC2_USER@$EC2_HOST:$APP_DIR/
 
-      - name: Install server deps and restart on EC2
+      - name: Install server deps on EC2
         run: |
-          ssh -i "$KEY" -o StrictHostKeyChecking=no -o ConnectTimeout=15 $EC2_USER@$EC2_HOST << 'ENDSSH'
-            set -e
-            cd /home/ubuntu/Prime-Alpha-Securities/my-app
-            echo "→ Installing server dependencies..."
-            npm ci --omit=dev
-            echo "→ Restarting server..."
-            if sudo systemctl restart pas-website 2>/dev/null; then
-              echo "  ✓ systemctl restarted"
-            elif pm2 restart pas-website 2>/dev/null; then
-              echo "  ✓ pm2 restarted"
-            else
-              pkill -f "node server.js" 2>/dev/null || true
-              sleep 1
-              nohup node server.js > /tmp/pas.log 2>&1 &
-              echo "  ✓ server started via nohup (pid $!)"
-            fi
-            echo "Deploy complete."
-          ENDSSH
+          ssh -i "$KEY" -o StrictHostKeyChecking=no -o ConnectTimeout=15 $EC2_USER@$EC2_HOST \
+            "cd $APP_DIR && npm ci --omit=dev"
+
+      - name: Trigger deploy via webhook
+        run: |
+          curl -sf -X POST \
+            "http://$EC2_HOST/api/deploy?token=${{ secrets.DEPLOY_TOKEN }}" \
+            --max-time 10 \
+          && echo "Deploy webhook OK" \
+          || echo "Webhook not yet set up — server will serve updated files on next restart"

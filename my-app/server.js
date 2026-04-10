@@ -383,9 +383,25 @@ function handleStatic(req, res) {
   else serve(resolved, path.join(DIST,'index.html'));
 }
 
+// ── Deploy webhook — POST /api/deploy  (GitHub Actions → EC2, no SSH needed) ──
+// Set DEPLOY_TOKEN env var on the EC2 process to secure this endpoint.
+function handleDeploy(req, res) {
+  if (req.method !== 'POST') return jsonRes(res, 405, { error: 'POST only' });
+  const token = new URL(req.url, 'http://x').searchParams.get('token');
+  if (!process.env.DEPLOY_TOKEN || token !== process.env.DEPLOY_TOKEN) {
+    return jsonRes(res, 401, { error: 'Unauthorized' });
+  }
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.write('Deploy triggered\n');
+  res.end();
+  console.log('[DEPLOY] webhook received — restarting...');
+  setTimeout(() => process.exit(0), 300); // process manager (pm2/systemd) restarts
+}
+
 // ── Single handler — ALB terminates TLS, EC2 always receives plain HTTP ───────
 // The ALB handles HTTP→HTTPS redirect if needed. Server just serves everything.
 function handler(req, res) {
+  if (req.url.startsWith('/api/deploy'))  return handleDeploy(req, res);
   if (req.url.startsWith('/api/notify/')) return handleNotify(req, res);
   if (req.url.startsWith('/api/'))        return handleApi(req, res);
   handleStatic(req, res);
