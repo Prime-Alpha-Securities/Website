@@ -1554,7 +1554,7 @@ function FundTerms(){
             <div style={{marginTop:28,paddingTop:24,borderTop:"var(--bdr)"}}>
               <div style={{fontSize:10,fontWeight:700,letterSpacing:"0.12em",textTransform:"uppercase",color:"var(--dim)",marginBottom:18}}>Milestones</div>
               {c.milestones.map(([year,title,desc],i)=>(
-                <div key={year} style={{display:"flex",gap:20,marginBottom:i<c.milestones.length-1?0:0,paddingBottom:18,borderBottom:i<c.milestones.length-1?"1px solid var(--lg)":"none",marginBottom:i<c.milestones.length-1?18:0}}>
+                <div key={year} style={{display:"flex",gap:20,paddingBottom:18,marginBottom:i<c.milestones.length-1?18:0,borderBottom:i<c.milestones.length-1?"1px solid var(--lg)":"none"}}>
                   <div style={{flexShrink:0,minWidth:90}}>
                     <div style={{fontFamily:"var(--ff-m)",fontSize:12,fontWeight:700,color:"var(--blue)"}}>{year}</div>
                     <div style={{fontSize:10,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",color:"var(--dim)",marginTop:3}}>{title}</div>
