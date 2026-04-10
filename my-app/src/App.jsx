@@ -42,10 +42,18 @@ const useLang = () => useContext(LangCtx);
 function useScrollAnimation(){
   useEffect(()=>{
     const obs=new IntersectionObserver(
-      entries=>entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('animate-in');obs.unobserve(e.target);}}),
-      {threshold:0.1,rootMargin:'0px 0px -40px 0px'}
+      entries=>entries.forEach(e=>{
+        if(e.isIntersecting){
+          const el=e.target;
+          if(el.classList.contains('fu'))   el.classList.add('in');
+          if(el.hasAttribute('data-animate')) el.classList.add('animate-in');
+          if(el.classList.contains('stat-num')) el.classList.add('in');
+          obs.unobserve(el);
+        }
+      }),
+      {threshold:0.08,rootMargin:'0px 0px -32px 0px'}
     );
-    document.querySelectorAll('[data-animate]').forEach(el=>obs.observe(el));
+    document.querySelectorAll('.fu,[data-animate],.stat-num').forEach(el=>obs.observe(el));
     return()=>obs.disconnect();
   });
 }
@@ -421,21 +429,53 @@ input, textarea, select { font-family: inherit; }
   .stat-grid   { grid-template-columns: 1fr 1fr !important; }
   .hide-sm     { display: none !important; }
 }
-/* Scroll animations — IntersectionObserver driven */
-[data-animate]{opacity:0;transform:translateY(20px);transition:opacity 0.6s ease,transform 0.6s ease}
+/* ── Scroll-triggered fade-up (Citadel-style) ─────────────────────────────── */
+/* Applied automatically to .fu elements — no data-* attributes required     */
+.fu{
+  opacity:0;
+  transform:translateY(28px);
+  transition:opacity 0.75s cubic-bezier(0.16,1,0.3,1),transform 0.75s cubic-bezier(0.16,1,0.3,1);
+  will-change:opacity,transform;
+}
+.fu.in{opacity:1;transform:translateY(0)}
+
+/* Stagger delays for sibling cards */
+.fu-1{transition-delay:0.06s}
+.fu-2{transition-delay:0.13s}
+.fu-3{transition-delay:0.20s}
+.fu-4{transition-delay:0.27s}
+.fu-5{transition-delay:0.34s}
+
+/* data-animate — same system, used on individually placed elements */
+[data-animate]{
+  opacity:0;
+  transform:translateY(22px);
+  transition:opacity 0.7s cubic-bezier(0.16,1,0.3,1),transform 0.7s cubic-bezier(0.16,1,0.3,1);
+  will-change:opacity,transform;
+}
 [data-animate].animate-in{opacity:1;transform:translateY(0)}
-[data-animate][data-delay="1"]{transition-delay:0.1s}
-[data-animate][data-delay="2"]{transition-delay:0.2s}
-[data-animate][data-delay="3"]{transition-delay:0.3s}
-[data-animate][data-delay="4"]{transition-delay:0.4s}
-[data-animate][data-delay="5"]{transition-delay:0.5s}
-.card-hover{transition:transform 0.3s ease,box-shadow 0.3s ease}
-.card-hover:hover{transform:translateY(-4px);box-shadow:var(--sh-lg)}
-.btn-animate{transition:transform 0.2s ease}
-.btn-animate:hover{transform:scale(1.02)}
-.btn-animate:active{transform:scale(0.98)}
+[data-animate][data-delay="1"]{transition-delay:0.08s}
+[data-animate][data-delay="2"]{transition-delay:0.16s}
+[data-animate][data-delay="3"]{transition-delay:0.24s}
+[data-animate][data-delay="4"]{transition-delay:0.32s}
+[data-animate][data-delay="5"]{transition-delay:0.40s}
+
+/* ── Hover micro-interactions ─────────────────────────────────────────────── */
+.card-hover{transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1),box-shadow 0.3s ease}
+.card-hover:hover{transform:translateY(-5px);box-shadow:0 12px 40px rgba(0,0,0,0.12)}
+.btn-animate{transition:transform 0.2s cubic-bezier(0.34,1.56,0.64,1),opacity 0.2s ease}
+.btn-animate:hover{transform:scale(1.03)}
+.btn-animate:active{transform:scale(0.97)}
+
+/* ── Number counter animation ─────────────────────────────────────────────── */
+@keyframes countUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.stat-num.in{animation:countUp 0.6s cubic-bezier(0.16,1,0.3,1) both}
+
+/* ── Global cross-platform fixes ──────────────────────────────────────────── */
 *{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 input,button,select{-webkit-appearance:none}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+img{-webkit-user-drag:none}
 `;
 
 
@@ -633,11 +673,11 @@ function LogoInline({height=28,dark=false}){
 function PageHero({eyebrow, title, body}){
   return(
     <div style={{paddingTop:66}}>
-      <div style={{background:"var(--head)",padding:"80px 40px"}}>
+      <div style={{background:"var(--head)",padding:"80px 40px",overflow:"hidden"}}>
         <div style={{maxWidth:960,margin:"0 auto"}}>
-          {eyebrow&&<div style={{fontSize:10,fontWeight:700,letterSpacing:"0.16em",textTransform:"uppercase",color:"var(--blue)",marginBottom:12}}>{eyebrow}</div>}
-          <h1 style={{fontFamily:"var(--ff-h)",fontSize:"clamp(38px,6vw,70px)",fontWeight:800,color:"#fff",letterSpacing:"-0.5px"}}>{title}</h1>
-          {body&&<p style={{fontSize:16,color:"rgba(255,255,255,0.6)",maxWidth:620,lineHeight:1.85,marginTop:20}}>{body}</p>}
+          {eyebrow&&<div className="fu" style={{fontSize:10,fontWeight:700,letterSpacing:"0.16em",textTransform:"uppercase",color:"var(--blue)",marginBottom:12}}>{eyebrow}</div>}
+          <h1 className="fu fu-1" style={{fontFamily:"var(--ff-h)",fontSize:"clamp(38px,6vw,70px)",fontWeight:800,color:"#fff",letterSpacing:"-0.5px"}}>{title}</h1>
+          {body&&<p className="fu fu-2" style={{fontSize:16,color:"rgba(255,255,255,0.6)",maxWidth:620,lineHeight:1.85,marginTop:20}}>{body}</p>}
         </div>
       </div>
     </div>
@@ -859,8 +899,8 @@ function PublicHome(){
             </h1>
             <p style={{fontSize:17,color:"rgba(255,255,255,0.55)",maxWidth:520,lineHeight:1.85,marginBottom:40,fontWeight:300}}>
               {lang==="en"
-                ?"We deploy capital across Private Equity, Private Credit, Commodities, and Real Estate — building the infrastructure Africa needs, one deal at a time."
-                :"Nous déployons des capitaux en Private Equity, Crédit Privé, Matières Premières et Immobilier — construisant les infrastructures dont l'Afrique a besoin, un deal à la fois."}
+                ?"We deploy capital across Private Equity, Private Credit, Commodities, and Real Estate. Building the infrastructure Africa needs, one deal at a time."
+                :"Nous déployons des capitaux en Private Equity, Crédit Privé, Matières Premières et Immobilier. Nous construisons les infrastructures dont l'Afrique a besoin, un deal à la fois."}
             </p>
             <div style={{display:"flex",gap:14,flexWrap:"wrap"}}>
               <button style={T.btnP} onClick={()=>navigate("What We Do")}>{lang==="en"?"Our Strategies":"Nos Stratégies"}</button>
@@ -873,8 +913,8 @@ function PublicHome(){
             borderTop:"1px solid rgba(255,255,255,0.1)",
           }}>
             {(lang==="en"
-              ?[["$1.92M","Assets Under Management"],["153.7%","Blended Return — All Capital"],["4","Active Strategies"],["June 2024","Founded"]]
-              :[["1,92 M$","Actifs sous Gestion"],["153,7%","Rendement Pondéré — Tout Capital"],["4","Stratégies Actives"],["Juin 2024","Fondé"]]
+              ?[["$1.92M","Assets Under Management"],["153.7%","Blended Return, All Capital"],["4","Active Strategies"],["June 2024","Founded"]]
+              :[["1,92 M$","Actifs sous Gestion"],["153,7%","Rendement Pondéré, Tout Capital"],["4","Stratégies Actives"],["Juin 2024","Fondé"]]
             ).map(([v,l],i)=>(
               <div key={l} style={{padding:"0 32px 0 0",borderRight:i<3?"1px solid rgba(255,255,255,0.08)":"none"}}>
                 <div style={{fontFamily:"var(--ff-h)",fontSize:"clamp(22px,3vw,40px)",fontWeight:800,color:"#fff",letterSpacing:"-0.5px",lineHeight:1}}>{v}</div>
@@ -898,16 +938,16 @@ function PublicHome(){
           <div className="rg-4" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:1,background:"var(--lg)"}}>
             {(lang==="en"
               ?[
-                {code:"PE",name:"Private Equity",desc:"Controlling and meaningful stakes in African businesses — retail, consumer staples, high-growth sectors. 3–7 year hold.",p:"Private Equity"},
-                {code:"PC",name:"Private Credit",desc:"Structured direct lending to mid-market businesses underserved by traditional banks. West Africa & Asia. Zero drawdowns to date.",p:"Private Credit"},
+                {code:"PE",name:"Private Equity",desc:"Controlling stakes in African businesses: retail, consumer staples, high-growth sectors. 3 to 7 year hold.",p:"Private Equity"},
+                {code:"PC",name:"Private Credit",desc:"Structured direct lending to mid-market businesses underserved by traditional banks. West Africa and Asia. Zero drawdowns to date.",p:"Private Credit"},
                 {code:"COM",name:"Commodities",desc:"Physical commodity trading across textiles, luxury goods, agriculture, and livestock. Regional sourcing networks across CEMAC.",p:"Commodities"},
                 {code:"RE",name:"Real Estate",desc:"U.S.-based strategy targeting residential and multifamily assets. Fix-and-flip, buy-and-hold, and distressed situations. Currently fundraising.",p:"Real Estate"},
               ]
               :[
-                {code:"PE",name:"Private Equity",desc:"Participations majoritaires dans des entreprises africaines — distribution, conso. de base, secteurs à forte croissance. 3–7 ans.",p:"Private Equity"},
+                {code:"PE",name:"Private Equity",desc:"Participations majoritaires dans des entreprises africaines : distribution, conso. de base, secteurs à forte croissance. 3 à 7 ans.",p:"Private Equity"},
                 {code:"PC",name:"Crédit Privé",desc:"Prêts structurés aux PME non servies par les banques traditionnelles. Afrique de l'Ouest & Asie. Zéro défaut à ce jour.",p:"Private Credit"},
-                {code:"MAT",name:"Matières Premières",desc:"Commerce de matières premières physiques — textile, luxe, agriculture et bétail. Réseaux d'approvisionnement en CEMAC.",p:"Commodities"},
-                {code:"IMM",name:"Immobilier",desc:"Stratégie basée aux États-Unis — résidentiel et multifamilial. Réhabilitation-revente, buy-and-hold, situations spéciales. En levée.",p:"Real Estate"},
+                {code:"MAT",name:"Matières Premières",desc:"Commerce de matières premières physiques : textile, luxe, agriculture et bétail. Réseaux d'approvisionnement en CEMAC.",p:"Commodities"},
+                {code:"IMM",name:"Immobilier",desc:"Stratégie basée aux États-Unis, résidentiel et multifamilial. Réhabilitation-revente, buy-and-hold, situations spéciales. En levée.",p:"Real Estate"},
               ]
             ).map((s,i)=>(
               <div key={s.code} className={`fu fu-${i+1}`}
@@ -949,8 +989,8 @@ function PublicHome(){
           </div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:1,background:"rgba(255,255,255,0.06)"}}>
             {(lang==="en"
-              ?[["$56K → $1.92M","Total capital growth since June 2024"],["153.7%","Blended return — all capital deployed"],["+195%","Return in first 11 months (no outside capital)"],["$20M","Conservative AUM target by 2030"]]
-              :[["56 K$ → 1,92 M$","Croissance totale depuis juin 2024"],["153,7%","Rendement pondéré — tout capital déployé"],["+195%","Rendement dans les 11 premiers mois"],["20 M$","Objectif AUM conservateur d'ici 2030"]]
+              ?[["$56K → $1.92M","Total capital growth since June 2024"],["153.7%","Blended return, all capital deployed"],["+195%","Return in first 11 months, no outside capital"],["$20M","Conservative AUM target by 2030"]]
+              :[["56 K$ → 1,92 M$","Croissance totale depuis juin 2024"],["153,7%","Rendement pondéré, tout capital déployé"],["+195%","Rendement dans les 11 premiers mois"],["20 M$","Objectif AUM conservateur d'ici 2030"]]
             ).map(([k,v])=>(
               <div key={k} style={{background:"rgba(255,255,255,0.03)",padding:"24px 20px"}}>
                 <div style={{fontFamily:"var(--ff-h)",fontSize:18,fontWeight:800,color:"var(--blue)",marginBottom:6,lineHeight:1.1}}>{k}</div>
@@ -1016,16 +1056,16 @@ function WhoWeAre({sub}){
   const C={
     Overview:{
       en:{h:"Who We Are",body:"Prime Alpha Securities is a Pan-African alternative investment management firm founded in June 2024 by three co-founders — an economist, a commodity engineer, and a technologist. We deploy flexible capital across Private Equity, Private Credit, Commodities, and Real Estate — primarily across CEMAC and West African markets, with an expanding U.S. Real Estate platform. We exist to correct a specific capital market failure: the Missing Middle of African business — companies too large for microfinance and too informal for institutional PE.",
-        stats:[["June 2024","Founded","CEMAC / West Africa"],["$1.92M","AUM — Dec. 2026","Across 4 strategies"],["153.7%","Blended Return","All capital ever deployed"],["$20M","2030 Target","Conservative AUM target"]]},
-      fr:{h:"Qui Sommes-Nous",body:"Prime Alpha Securities est une firme panafricaine de gestion d'investissements alternatifs fondée en juin 2024 par trois co-fondateurs. Nous déployons des capitaux flexibles en Private Equity, Crédit Privé, Matières Premières et Immobilier — principalement sur les marchés CEMAC et Afrique de l'Ouest, avec une plateforme Immobilier en expansion aux États-Unis.",
-        stats:[["Juin 2024","Fondé","CEMAC / Afrique de l'Ouest"],["1,92 M$","AUM — Déc. 2026","Sur 4 stratégies"],["153,7%","Rendement Pondéré","Tout capital déployé"],["20 M$","Objectif 2030","Scénario conservateur"]]},
+        stats:[["June 2024","Founded","CEMAC / West Africa"],["$1.92M","AUM, Dec. 2026","Across 4 strategies"],["153.7%","Blended Return","All capital ever deployed"],["$20M","2030 Target","Conservative AUM target"]]},
+      fr:{h:"Qui Sommes-Nous",body:"Prime Alpha Securities est une firme panafricaine de gestion d'investissements alternatifs fondée en juin 2024 par trois co-fondateurs. Nous déployons des capitaux flexibles en Private Equity, Crédit Privé, Matières Premières et Immobilier, principalement sur les marchés CEMAC et Afrique de l'Ouest, avec une plateforme Immobilier en expansion aux États-Unis.",
+        stats:[["Juin 2024","Fondé","CEMAC / Afrique de l'Ouest"],["1,92 M$","AUM, Déc. 2026","Sur 4 stratégies"],["153,7%","Rendement Pondéré","Tout capital déployé"],["20 M$","Objectif 2030","Scénario conservateur"]]},
     },
     Culture:{
       en:{h:"Our Culture",body:"Culture is not what you say you believe. It is what you do when you are under pressure, short on time, and the right answer is inconvenient. These are the non-negotiables that define how we operate — built before pressure tested them.",
         pillars:[
           ["Eat What You Kill","Every deal team is directly accountable for the returns they generate. No hiding behind aggregated fund performance. We hunt together, but individual accountability is absolute."],
-          ["Zero Tolerance for Bribery","Any engagement in bribery of public officials — by any team member or portfolio company — results in immediate divestment and disclosure to LPs. No exceptions for 'how business is done here.'"],
-          ["Fiduciary Primacy","LP interests are never subordinated to personal founder interests. All conflicts of interest are disclosed within 24 hours of identification. This is not a guideline — it is a non-negotiable."],
+          ["Zero Tolerance for Bribery","Any engagement in bribery of public officials, by any team member or portfolio company, results in immediate divestment and disclosure to LPs. No exceptions for 'how business is done here.'"],
+          ["Fiduciary Primacy","LP interests are never subordinated to personal founder interests. All conflicts of interest are disclosed within 24 hours of identification. This is not a guideline. It is a non-negotiable."],
           ["First-Mover Mindset","We are not replicating Wall Street in Africa. We are building something only Africa could create — with its own rhythm, ambition, and rules. The CEMAC region's structural constraints are our competitive moat, not a limitation."],
           ["Legal Compliance — Always","We do not make investments in markets where operating legally is structurally impossible, regardless of return opportunity. Tone at the top is a behavioral pattern, not a communication strategy."],
           ["Disagreement on the Record","When founders disagree on an investment or strategic decision and one is overruled, the dissenting position is recorded in investment committee minutes. We prevent revisionism by documenting it."],
@@ -1109,7 +1149,7 @@ function WhoWeAre({sub}){
   const d=c[lang]||c.en;
   return(
     <div>
-      <PageHero eyebrow={lang==="en"?"Who We Are":"Qui Sommes-Nous"} title={d.h.toUpperCase()} body={d.body}/>
+      <PageHero eyebrow={d.eyebrow||(lang==="en"?"Who We Are":"Qui Sommes-Nous")} title={d.h.toUpperCase()} body={d.body}/>
       <div style={{maxWidth:960,margin:"0 auto",padding:"64px max(16px,4vw)"}}>
         {d.stats&&<div className="rg-4" style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:20}}>
           {d.stats.map(([v,l,s])=>(
