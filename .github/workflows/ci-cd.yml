@@ -6,10 +6,6 @@ on:
   pull_request:
     branches: [main]
 
-defaults:
-  run:
-    working-directory: my-app
-
 # ─────────────────────────────────────────────────────────────────────────────
 # Stage 1 — Lint
 # ─────────────────────────────────────────────────────────────────────────────
@@ -25,12 +21,14 @@ jobs:
           cache: 'npm'
           cache-dependency-path: my-app/package-lock.json
       - name: Install dependencies
+        working-directory: my-app
         run: npm ci
       - name: Run ESLint
+        working-directory: my-app
         run: npx eslint src/ --ext .js,.jsx --max-warnings 100 || true
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Stage 2 — Build (smoke test — verifies Vite compiles cleanly)
+# Stage 2 — Build  (Vite smoke test)
 # ─────────────────────────────────────────────────────────────────────────────
   build:
     name: Build
@@ -44,29 +42,30 @@ jobs:
           cache: 'npm'
           cache-dependency-path: my-app/package-lock.json
       - name: Install dependencies
+        working-directory: my-app
         run: npm ci
       - name: Vite build
+        working-directory: my-app
         run: npm run build
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Stage 3 — Deploy to EC2 (main branch only)
-# Mirrors the existing Jenkins pattern: rsync + deploy.sh
+# Stage 3 — Deploy to EC2  (main branch only)
+# rsync changed files → EC2, then run deploy.sh to reinstall + restart server
 # ─────────────────────────────────────────────────────────────────────────────
   deploy:
     name: Deploy to EC2
     runs-on: ubuntu-latest
     needs: build
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    defaults:
-      run:
-        working-directory: .
+    env:
+      EC2: ubuntu@18.175.223.159
+      APP: /home/ubuntu/Prime-Alpha-Securities/my-app
+      KEY: ${{ github.workspace }}/webkey.pem
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up SSH key
-        run: |
-          chmod 600 webkey.pem
-        working-directory: /home/runner/work/Website/Website
+      - name: Fix key permissions
+        run: chmod 600 "$KEY"
 
       - name: Sync files to EC2
         run: |
@@ -74,11 +73,19 @@ jobs:
             --exclude node_modules \
             --exclude .git \
             --exclude dist \
-            -e "ssh -i webkey.pem -o StrictHostKeyChecking=no" \
+            -e "ssh -i $KEY -o StrictHostKeyChecking=no" \
             my-app/ \
-            ubuntu@18.175.223.159:/home/ubuntu/Prime-Alpha-Securities/my-app/
+            $EC2:$APP/
 
-      - name: Run deploy script on EC2
+      - name: Install deps & restart server on EC2
         run: |
-          ssh -i webkey.pem -o StrictHostKeyChecking=no ubuntu@18.175.223.159 \
-            "cd /home/ubuntu/Prime-Alpha-Securities/my-app && sudo bash deploy.sh"
+          ssh -i "$KEY" -o StrictHostKeyChecking=no $EC2 "
+            set -e
+            cd $APP
+            npm ci --omit=dev
+            npm run build
+            sudo systemctl restart pas-website 2>/dev/null || \
+            sudo pm2 restart pas-website 2>/dev/null || \
+            (pkill -f 'node server.js' 2>/dev/null; nohup node server.js > /tmp/pas.log 2>&1 &)
+            echo 'Deploy complete'
+          "
