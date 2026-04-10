@@ -418,6 +418,14 @@ input, textarea, select { font-family: inherit; }
   .hero-grid  { grid-template-columns: 1fr !important; }
   .px-page    { padding-left: 24px !important; padding-right: 24px !important; }
   .px-hero    { padding-left: 24px !important; padding-right: 24px !important; padding-top: 80px !important; }
+  /* Investor portal */
+  .inv-sidebar { display: none !important; }
+  .inv-content { margin-left: 0 !important; padding: 20px 20px 90px !important; }
+  .inv-mob-tabs { display: flex !important; }
+  .inv-mob-header { display: block !important; }
+  .inv-dash-grid { grid-template-columns: 1fr !important; }
+  .inv-prof-grid { grid-template-columns: 1fr !important; }
+  .inv-table-wrap { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
 }
 @media (max-width: 600px) {
   .rg-4        { grid-template-columns: 1fr !important; }
@@ -428,7 +436,41 @@ input, textarea, select { font-family: inherit; }
   .form-2col > div { padding-left: 0 !important; }
   .stat-grid   { grid-template-columns: 1fr 1fr !important; }
   .hide-sm     { display: none !important; }
+  /* Investor portal small */
+  .inv-content { padding: 16px 16px 88px !important; }
+  .inv-stat-row { flex-direction: column !important; }
 }
+/* Investor portal mobile tab bar */
+.inv-mob-tabs {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: #fff;
+  border-top: 1px solid #e5e7eb;
+  z-index: 600;
+  height: 64px;
+  align-items: stretch;
+  box-shadow: 0 -2px 16px rgba(0,0,0,0.08);
+}
+.inv-mob-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: #9ca3af;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px 4px;
+  transition: color 0.15s;
+}
+.inv-mob-tab.active { color: var(--blue); }
+.inv-mob-tab svg { width: 20px; height: 20px; }
 /* ── Scroll-triggered fade-up (Citadel-style) ─────────────────────────────── */
 /* Applied automatically to .fu elements — no data-* attributes required     */
 .fu{
@@ -2138,9 +2180,17 @@ function InvestorPortal({user,setUser,onLogout}){
   const tabs=["Dashboard","Portfolio","Documents","R&D","Profile"];
   const showToast=(msg,type="success")=>stt({msg,type});
 
+  const tabIcons={
+    Dashboard:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>,
+    Portfolio:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
+    Documents:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>,
+    "R&D":<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
+    Profile:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+  };
   return(
     <div style={{minHeight:"100vh",background:"var(--ow)",display:"flex"}}>
-      <div style={{width:240,background:"var(--w)",borderRight:"var(--bdr)",display:"flex",flexDirection:"column",position:"fixed",top:0,bottom:0,left:0}}>
+      {/* Desktop sidebar */}
+      <div className="inv-sidebar" style={{width:240,background:"var(--w)",borderRight:"var(--bdr)",display:"flex",flexDirection:"column",position:"fixed",top:0,bottom:0,left:0}}>
         <div style={{padding:"20px 18px",borderBottom:"var(--bdr)",lineHeight:1}}><LogoInline size={14}/><div style={{fontSize:10,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:"var(--blue)",marginTop:6}}>INVESTOR PORTAL</div></div>
         <div style={{padding:"14px 10px",flex:1}}>{tabs.map(t=><SideBtn key={t} label={t} active={tab===t} onClick={()=>st(t)}/>)}</div>
         <div style={{padding:"16px 18px",borderTop:"var(--bdr)"}}>
@@ -2154,13 +2204,30 @@ function InvestorPortal({user,setUser,onLogout}){
           <button style={{...T.btnG,width:"100%",fontSize:12}} onClick={onLogout}>Sign Out</button>
         </div>
       </div>
-      <div style={{marginLeft:240,flex:1,padding:"36px 44px"}}>
+      {/* Main content */}
+      <div className="inv-content" style={{marginLeft:240,flex:1,padding:"36px 44px",minWidth:0}}>
+        {/* Mobile top bar */}
+        <div style={{display:"none"}} className="inv-mob-header">
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,paddingBottom:16,borderBottom:"var(--bdr)"}}>
+            <LogoInline size={13}/>
+            <button style={{...T.btnG,fontSize:11}} onClick={onLogout}>Sign Out</button>
+          </div>
+        </div>
         {tab==="Dashboard" &&<IDash   user={user}/>}
         {tab==="Portfolio" &&<IPort   user={user}/>}
         {tab==="Documents" &&<IDocs   user={user}/>}
         {tab==="R&D"       &&<IRD/>}
         {tab==="Profile"   &&<IProf   user={user} setUser={setUser} showToast={showToast}/>}
       </div>
+      {/* Mobile bottom tab bar */}
+      <nav className="inv-mob-tabs">
+        {tabs.map(t=>(
+          <button key={t} className={`inv-mob-tab${tab===t?" active":""}`} onClick={()=>st(t)}>
+            {tabIcons[t]}
+            {t}
+          </button>
+        ))}
+      </nav>
       <Toast msg={toast.msg} type={toast.type} onClose={()=>stt({msg:"",type:"success"})}/>
     </div>
   );
@@ -2174,13 +2241,13 @@ function IDash({user}){
         <h1 style={{...T.hdg,fontSize:34}}>Overview</h1>
         <p style={{color:"var(--dim)",marginTop:4}}>{new Date().toLocaleDateString("en-GB",{weekday:"long",year:"numeric",month:"long",day:"numeric"})}</p>
       </div>
-      <div style={{display:"flex",gap:16,marginBottom:24,flexWrap:"wrap"}}>
+      <div className="inv-stat-row" style={{display:"flex",gap:16,marginBottom:24,flexWrap:"wrap"}}>
         <StatCard label="Total AUM" value={$(user.aum)} sub="Assets Under Management" accent/>
         <StatCard label="Net P&L (YTD)" value={$(user.pnl)} sub={`+${roi}% return`} trend={+parseFloat(roi)}/>
         <StatCard label="Cumulative P&L" value={$(user.cumulativePnl)} sub="Since inception"/>
         <StatCard label="Strategy" value={user.strategy} sub={`Risk: ${user.risk}`}/>
       </div>
-      <div style={{display:"grid",gridTemplateColumns:"3fr 2fr",gap:20}}>
+      <div className="inv-dash-grid" style={{display:"grid",gridTemplateColumns:"3fr 2fr",gap:20}}>
         <div style={T.card}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
             <h3 style={{...T.hdg,fontSize:17}}>Monthly P&L</h3>
@@ -2222,7 +2289,8 @@ function IPort({user}){
       </div>
       <div style={T.card}>
         <h3 style={{...T.hdg,fontSize:18,marginBottom:20}}>Position Detail</h3>
-        <table style={{width:"100%",borderCollapse:"collapse"}}>
+        <div className="inv-table-wrap">
+        <table style={{width:"100%",borderCollapse:"collapse",minWidth:420}}>
           <thead><tr style={{borderBottom:"2px solid var(--lg)"}}>
             {["Investment","Market Value","Allocation","Est. Return YTD"].map(h=>(
               <th key={h} style={{textAlign:"left",padding:"8px 20px 12px 0",fontSize:10,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:"var(--dim)"}}>{h}</th>
@@ -2239,6 +2307,7 @@ function IPort({user}){
             ))}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );
@@ -2310,7 +2379,7 @@ function IProf({user,setUser,showToast}){
   return(
     <div className="fu">
       <h1 style={{...T.hdg,fontSize:34,marginBottom:28}}>Profile</h1>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:24}}>
+      <div className="inv-prof-grid" style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:24}}>
         <div style={T.card}>
           <h3 style={{...T.hdg,fontSize:18,marginBottom:18}}>Account Details</h3>
           {[["Name",user.name],["Email",user.email],["Phone",user.phone],["Member Since",user.joinDate],["Investment Term",user.term],["Strategy",user.strategy],["Risk Profile",user.risk]].map(([k,v])=><KV key={k} k={k} v={v}/>)}
