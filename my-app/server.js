@@ -397,7 +397,7 @@ function handleDeploy(req, res) {
   res.end();
 
   const { exec } = require('child_process');
-  const ROOT = path.join(__dirname, '..');  // /home/ubuntu/Prime-Alpha-Securities
+  const ROOT = path.join(__dirname, '..');  // /home/ubuntu/Website
   const cmd = `cd ${ROOT} && git pull origin main && cd my-app && sudo bash deploy.sh`;
 
   console.log('[DEPLOY] pulling and redeploying...');
