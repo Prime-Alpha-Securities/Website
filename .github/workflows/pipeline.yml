@@ -1,5 +1,4 @@
 name: Deploy to EC2
-
 on:
   push:
     branches:
@@ -10,26 +9,20 @@ on:
   workflow_dispatch:
 
 jobs:
-  deploy:
+  # Job 1: Checkout and build
+  build:
     runs-on: ubuntu-latest
+    outputs:
+      build-status: ${{ job.status }}
     
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_PRIVATE_KEY }}" > ~/.ssh/webkey.pem
-          chmod 600 ~/.ssh/webkey.pem
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
-
-      - name: Verify SSH Connection
-        run: |
-          ssh -o StrictHostKeyChecking=no \
-              -i ~/.ssh/webkey.pem \
-              ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
-              "echo 'SSH connection successful' && uname -a"
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
 
       - name: Package Project
         run: |
@@ -48,24 +41,152 @@ jobs:
           
           echo "✅ Package prepared"
 
-      - name: Upload to EC2
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifact
+          path: build/
+          retention-days: 1
+
+  # Job 2: Verify SSH connection
+  verify-connection:
+    runs-on: ubuntu-latest
+    needs: build
+    
+    steps:
+      - name: Setup SSH
         run: |
-          echo "📤 Uploading files to EC2..."
+          mkdir -p ~/.ssh
           
+          # Write private key with proper handling
+          cat > ~/.ssh/webkey.pem << 'EOF'
+          ${{ secrets.EC2_PRIVATE_KEY }}
+          EOF
+          
+          chmod 600 ~/.ssh/webkey.pem
+          
+          # Verify key format
+          echo "🔑 Verifying SSH key format..."
+          if head -1 ~/.ssh/webkey.pem | grep -q "BEGIN"; then
+            echo "✅ SSH key format is valid"
+          else
+            echo "❌ SSH key format is invalid"
+            exit 1
+          fi
+          
+          # Add EC2 host to known hosts
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Verify SSH Connection
+        run: |
+          echo "🔗 Verifying SSH connection to EC2..."
+          ssh -vvv \
+              -o StrictHostKeyChecking=no \
+              -o UserKnownHostsFile=~/.ssh/known_hosts \
+              -i ~/.ssh/webkey.pem \
+              ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
+              "echo 'SSH connection successful' && uname -a"
+
+      - name: Cleanup SSH Key
+        if: always()
+        run: |
+          rm -f ~/.ssh/webkey.pem
+          rm -f ~/.ssh/known_hosts
+
+  # Job 3: Upload to EC2
+  upload:
+    runs-on: ubuntu-latest
+    needs: [build, verify-connection]
+    
+    steps:
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifact
+          path: build/
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          
+          # Write private key with proper handling
+          cat > ~/.ssh/webkey.pem << 'EOF'
+          ${{ secrets.EC2_PRIVATE_KEY }}
+          EOF
+          
+          chmod 600 ~/.ssh/webkey.pem
+          
+          # Verify key format
+          echo "🔑 Verifying SSH key format..."
+          if head -1 ~/.ssh/webkey.pem | grep -q "BEGIN"; then
+            echo "✅ SSH key format is valid"
+          else
+            echo "❌ SSH key format is invalid"
+            exit 1
+          fi
+          
+          # Add EC2 host to known hosts
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Create Remote Directory
+        run: |
           ssh -o StrictHostKeyChecking=no \
+              -o UserKnownHostsFile=~/.ssh/known_hosts \
               -i ~/.ssh/webkey.pem \
               ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
               "mkdir -p ${{ secrets.APP_DIR }}"
+
+      - name: Upload Files to EC2
+        run: |
+          echo "📤 Uploading files to EC2..."
           
           rsync -avz --delete \
-            -e "ssh -i ~/.ssh/webkey.pem -o StrictHostKeyChecking=no" \
+            -e "ssh -i ~/.ssh/webkey.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=~/.ssh/known_hosts" \
             build/ \
             ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.APP_DIR }}/
+          
+          echo "✅ Files uploaded successfully"
+
+      - name: Cleanup SSH Key
+        if: always()
+        run: |
+          rm -f ~/.ssh/webkey.pem
+          rm -f ~/.ssh/known_hosts
+
+  # Job 4: Run deployment script
+  deploy:
+    runs-on: ubuntu-latest
+    needs: upload
+    
+    steps:
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          
+          # Write private key with proper handling
+          cat > ~/.ssh/webkey.pem << 'EOF'
+          ${{ secrets.EC2_PRIVATE_KEY }}
+          EOF
+          
+          chmod 600 ~/.ssh/webkey.pem
+          
+          # Verify key format
+          echo "🔑 Verifying SSH key format..."
+          if head -1 ~/.ssh/webkey.pem | grep -q "BEGIN"; then
+            echo "✅ SSH key format is valid"
+          else
+            echo "❌ SSH key format is invalid"
+            exit 1
+          fi
+          
+          # Add EC2 host to known hosts
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
 
       - name: Run Deploy Script
         run: |
           echo "🚀 Running deployment script on EC2..."
           ssh -o StrictHostKeyChecking=no \
+              -o UserKnownHostsFile=~/.ssh/known_hosts \
               -i ~/.ssh/webkey.pem \
               ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
               "cd ${{ secrets.APP_DIR }} && \
@@ -78,10 +199,22 @@ jobs:
           rm -f ~/.ssh/webkey.pem
           rm -f ~/.ssh/known_hosts
 
+  # Job 5: Notification/Status
+  notify:
+    runs-on: ubuntu-latest
+    needs: [build, verify-connection, upload, deploy]
+    if: always()
+    
+    steps:
       - name: Deployment Success
         if: success()
-        run: echo "✅ Deployment to ${{ secrets.EC2_HOST }} completed successfully!"
+        run: |
+          echo "✅ Deployment to ${{ secrets.EC2_HOST }} completed successfully!"
+          echo "All jobs finished with status: SUCCESS"
 
       - name: Deployment Failure
         if: failure()
-        run: echo "❌ Deployment failed! Check logs above."
+        run: |
+          echo "❌ Deployment failed! Check logs above."
+          echo "Failed jobs need investigation."
+          exit 1
